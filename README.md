@@ -41,6 +41,10 @@ what each result does, alongside the eight attack steps, the Build Power
 actions, and how Break is escaped. The panel in this repository automates the
 same decision at the table.
 
+*That page is private for now, so the link works only for its author. It
+summarises rules from the Storyteller's Guide, which is still an unpublished
+draft.*
+
 ## Requirements
 
 - Foundry VTT **v14**
