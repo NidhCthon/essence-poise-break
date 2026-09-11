@@ -29,6 +29,18 @@ It never rolls dice, applies damage or changes a sheet. Every button opens the
 system's own roller, which does all of that. If the system's maths changes, this
 module needs no update.
 
+## Player guide
+
+A companion one-page guide to the Combat Reforged roll flow, for players rather
+than for the module:
+
+**https://claude.ai/code/artifact/fe502d68-5e84-428a-9085-303117b300f0**
+
+Pick your target's state and it shows which attack to make, what to wager, and
+what each result does, alongside the eight attack steps, the Build Power
+actions, and how Break is escaped. The panel in this repository automates the
+same decision at the table.
+
 ## Requirements
 
 - Foundry VTT **v14**
