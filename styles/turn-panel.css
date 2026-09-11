@@ -1,0 +1,173 @@
+/* Poise & Break — Turn Panel
+   Jade for withering and standing, orichalcum for Power and decisive attacks,
+   a break red for Break: the same colour meanings as the player guide. */
+
+.essence-poise-break {
+  --epb-jade: #2e8f6d;
+  --epb-gold: #c98b24;
+  --epb-break: #c2453a;
+  --epb-line: rgba(128, 140, 134, 0.35);
+  --epb-muted: rgba(128, 140, 134, 1);
+}
+
+.essence-poise-break .window-content {
+  display: grid;
+  gap: 12px;
+  padding: 12px 14px 14px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.essence-poise-break section {
+  display: grid;
+  gap: 6px;
+}
+
+.essence-poise-break .epb-label {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--epb-muted);
+}
+
+.essence-poise-break p {
+  margin: 0;
+}
+
+.essence-poise-break h3 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.2;
+  border: none;
+}
+
+/* ---- your own state ---- */
+
+.essence-poise-break .epb-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.essence-poise-break .epb-stat {
+  border: 1px solid var(--epb-line);
+  border-radius: 4px;
+  padding: 3px 7px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.essence-poise-break .epb-stat b {
+  color: var(--epb-gold);
+}
+
+.essence-poise-break .epb-note {
+  font-size: 12px;
+  color: var(--epb-muted);
+}
+
+.essence-poise-break .epb-note.epb-break {
+  color: var(--epb-break);
+}
+
+/* ---- the target ---- */
+
+.essence-poise-break .epb-target {
+  border-top: 1px solid var(--epb-line);
+  padding-top: 10px;
+}
+
+.essence-poise-break .epb-target-name {
+  font-weight: 700;
+}
+
+.essence-poise-break .epb-chip {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid currentColor;
+}
+
+.essence-poise-break .epb-chip-standing { color: var(--epb-jade); }
+.essence-poise-break .epb-chip-break { color: var(--epb-break); }
+.essence-poise-break .epb-chip-group,
+.essence-poise-break .epb-chip-standard { color: var(--epb-gold); }
+
+/* ---- attacks ---- */
+
+.essence-poise-break .epb-attacks,
+.essence-poise-break .epb-other {
+  border-top: 1px solid var(--epb-line);
+  padding-top: 10px;
+}
+
+.essence-poise-break .epb-weapon {
+  display: grid;
+  gap: 5px;
+}
+
+.essence-poise-break .epb-weapon + .epb-weapon {
+  margin-top: 8px;
+}
+
+.essence-poise-break .epb-weapon-name {
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.essence-poise-break .epb-over {
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--epb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.essence-poise-break .epb-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.essence-poise-break .epb-btn {
+  flex: 1 1 auto;
+  min-width: 84px;
+  width: auto;
+  padding: 5px 8px;
+  font-size: 12px;
+  line-height: 1.3;
+  border: 1px solid var(--epb-line);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.essence-poise-break .epb-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* A legal attack is named in its own colour; a blocked one greys out and
+   explains itself on hover. */
+.essence-poise-break .epb-btn.epb-withering:not(:disabled) {
+  color: var(--epb-jade);
+  border-color: var(--epb-jade);
+}
+
+.essence-poise-break .epb-btn.epb-decisive:not(:disabled),
+.essence-poise-break .epb-btn.epb-gambit:not(:disabled) {
+  color: var(--epb-gold);
+  border-color: var(--epb-gold);
+}
+
+.essence-poise-break .epb-footer {
+  border-top: 1px solid var(--epb-line);
+  padding-top: 8px;
+  font-size: 11px;
+  color: var(--epb-muted);
+}
