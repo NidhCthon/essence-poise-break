@@ -78,3 +78,12 @@ and when Power or Poise changes.
 - `game.exaltedessence` is the system's macro API rather than a documented one.
   It is stable enough for hotbar macros, but a system update could rename it —
   in which case the buttons report the error rather than failing silently.
+
+## Licence
+
+MIT — see [LICENSE](LICENSE).
+
+This module contains no game text. It reads your own character and target data
+inside Foundry and opens the system's roller; the rules it follows come from
+*Exalted: Essence* and its Storyteller's Guide, which you need to own to play.
+Not affiliated with or endorsed by Onyx Path Publishing.
