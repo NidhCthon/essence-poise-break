@@ -21,7 +21,10 @@ standard rules and leaves both attack types available.
     itself rather than hiding.
 - Tells you, when you are in Break, how much Poise you still need — Power you
   gain refills Poise before it reaches your pool.
-- Buttons for Build Power, Focus Will, social and plain rolls.
+- For sorcerers, a **Sorcery** section: your current Will out of 10, every spell
+  you know with its Will cost (dimmed when you can't afford it yet), a Focus
+  Will button, and cast buttons gated by the same rule as weapons.
+- Buttons for Build Power, social and plain rolls.
 
 ## What it does not do
 
@@ -72,6 +75,12 @@ game.modules.get("essence-poise-break").api.open();
 ```
 
 ## How it hooks in
+
+Casting is not a roll type of its own. In Essence you spend the spell's Will,
+and an attack spell is rolled as an ordinary attack with Sagacity replacing a
+combat Ability — so the cast buttons open the normal attack roller with the
+ability preset, and the weapon left off. The system's roller treats the weapon
+as optional, which is what makes that work.
 
 The system exposes the roller through the same API it writes into hotbar macros:
 
