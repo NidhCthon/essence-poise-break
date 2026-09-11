@@ -1,7 +1,7 @@
 {
   "id": "essence-poise-break",
-  "title": "Poise & Break \u2014 Turn Panel",
-  "description": "A turn panel for Exalted: Essence. On your turn it reads your target's state and offers only the attacks that are legal against them \u2014 withering while they still have Poise, decisive once they are in Break \u2014 then opens the system's own roller. Built for the Combat Reforged rules from the Storyteller's Guide, and falls back to standard rules when that setting is off.",
+  "title": "Poise & Break — Turn Panel",
+  "description": "A turn panel for Exalted: Essence. On your turn it reads your target's state and offers only the attacks that are legal against them — withering while they still have Poise, decisive once they are in Break — then opens the system's own roller. Built for the Combat Reforged rules from the Storyteller's Guide, and falls back to standard rules when that setting is off.",
   "version": "0.2.0",
   "compatibility": {
     "minimum": "14",
