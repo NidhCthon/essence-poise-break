@@ -252,3 +252,11 @@
   padding-left: 10px;
   border-left: 2px solid var(--epb-break);
 }
+
+/* The arithmetic behind the verdict, so a disagreement with the roller is
+   visible rather than mysterious. */
+.essence-poise-break .epb-working {
+  font-size: 11px;
+  color: var(--epb-muted);
+  font-variant-numeric: tabular-nums;
+}

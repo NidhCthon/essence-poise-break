@@ -95,6 +95,72 @@ function legality(target, reforged) {
   return { allow, why, state: "standing" };
 }
 
+/**
+ * The numbers a roll will actually use against this target.
+ *
+ * The system's roller adjusts a target's Defense and Poise for the conditions
+ * on their token, so reading the raw sheet values would advise you with
+ * numbers the roll then contradicts. This mirrors that adjustment.
+ *
+ * Source: module/apps/dice-roller.js, the block that inspects target effects
+ * (prone, surprised, cover, concealment, grappling) plus the wound penalty.
+ * If the system changes those, this drifts out of step - which is why the
+ * panel shows its working rather than only the total.
+ *
+ * Two things are reported rather than folded in: cover only applies against
+ * ranged attacks, and concealment costs the attacker dice rather than raising
+ * Defense. The panel cannot know which weapon you will reach for.
+ */
+function targetNumbers(target, reforged) {
+  const has = (name) => !!target?.effects?.some((e) => e.name === name);
+  const baseDefense =
+    target?.system?.defense?.value ??
+    Math.max(target?.system?.evasion?.value ?? 0, target?.system?.parry?.value ?? 0);
+  const basePoise = target?.system?.poise?.value ?? 0;
+
+  let defense = baseDefense;
+  let poise = basePoise;
+  const working = [];
+
+  if (has("prone")) {
+    defense -= 2;
+    working.push("prone &minus;2");
+  }
+  if (has("surprised")) {
+    defense -= 1;
+    poise -= 1;
+    working.push("surprised &minus;1 Defense and Poise");
+  }
+  if (reforged && has("grappling")) {
+    defense -= 1;
+    working.push("grappled &minus;1");
+  }
+
+  // Incapacitated reports as "inc" rather than a number; the roller counts it
+  // as 2.
+  const penalty = target?.system?.health?.penalty;
+  const wound = penalty === "inc" ? 2 : Number(penalty) || 0;
+  if (wound) {
+    defense -= wound;
+    working.push(`wounds &minus;${wound}`);
+  }
+
+  const notes = [];
+  if (has("heavycover")) notes.push("heavy cover +2 Defense against ranged attacks");
+  else if (has("lightcover")) notes.push("light cover +1 Defense against ranged attacks");
+  if (has("concealment")) notes.push("concealment &minus;2 dice from your pool");
+
+  return {
+    baseDefense,
+    basePoise,
+    defense: Math.max(0, defense),
+    poise: Math.max(0, poise),
+    soak: target?.system?.soak?.value ?? 0,
+    working,
+    notes
+  };
+}
+
 /* -------------------------------------------- */
 /*  The panel                                   */
 /* -------------------------------------------- */
@@ -251,39 +317,46 @@ class TurnPanel extends ApplicationV2 {
     const explain = game.settings.get(MODULE_ID, "explain");
     const power = actor.system?.power?.value ?? 0;
 
-    // Characters carry defense directly; antagonists may only have the parts.
-    const defenseOf = (a) =>
-      a?.system?.defense?.value ??
-      Math.max(a?.system?.evasion?.value ?? 0, a?.system?.parry?.value ?? 0);
-
     let headline = "Pick a target";
     let sums = "";
+    let working = "";
     let rule =
       "The roller reads Defense, Soak and Poise from your target, so target a token before rolling.";
 
     if (target) {
-      const def = defenseOf(target);
-      const soak = target.system?.soak?.value ?? 0;
-      const poise = target.system?.poise?.value ?? 0;
+      const n = targetNumbers(target, reforged);
+      const { defense, poise, soak } = n;
 
       if (state === "standing") {
         headline = "Wither them";
-        sums = `<b>${def + poise}</b> successes Breaks them: ${def} to beat Defense, then ${poise} more for their Poise.`;
+        sums = `<b>${defense + poise}</b> successes Breaks them: ${defense} to beat Defense, then ${poise} more for their Poise.`;
         rule = "A target who still has Poise can only be hit by withering attacks. They Break when your extra successes reach their Poise.";
       } else if (state === "break") {
         headline = "Strike decisively";
-        sums = `Damage is the Power you wager (you hold <b>${power}</b>) plus extra successes over ${def} Defense, minus ${soak} Soak.`;
+        sums = `Damage is the Power you wager (you hold <b>${power}</b>) plus extra successes over ${defense} Defense, minus ${soak} Soak.`;
         rule = "In Break they can only be hit by decisive attacks, and their Poise cannot fall further until they rebuild it.";
       } else if (state === "group") {
         headline = "Strike decisively";
-        sums = `${def} Defense, ${soak} Soak. Forcing a rout check earns you Size + 1 Power.`;
+        sums = `${defense} Defense, ${soak} Soak. Forcing a rout check earns you Size + 1 Power.`;
         rule = "Battle groups have no Poise, so every attack on them is decisive. They cannot be withered outside a grapple.";
       } else {
         const hardness = target.system?.hardness?.value ?? 0;
         headline = "Your call";
-        sums = `A decisive attack needs ${hardness} Power or more and you hold <b>${power}</b>. Defense ${def}, Soak ${soak}.`;
+        sums = `A decisive attack needs ${hardness} Power or more and you hold <b>${power}</b>. Defense ${defense}, Soak ${soak}.`;
         rule = "Standard rules: both attack types stay open, and a decisive attack needs Power at least equal to their Hardness.";
       }
+
+      // Show the working, so a disagreement with the roller is visible rather
+      // than just puzzling.
+      const bits = [];
+      if (n.working.length) {
+        bits.push(`Defense ${n.baseDefense} &rarr; ${defense}: ${n.working.join(" &middot; ")}`);
+      }
+      bits.push(...n.notes);
+      if (state !== "none") {
+        bits.push("before they spend anything on defence");
+      }
+      working = bits.join(" &middot; ");
     }
 
     const notes = [];
@@ -303,6 +376,7 @@ class TurnPanel extends ApplicationV2 {
       <section class="epb-verdict" data-state="${state}">
         <p class="epb-headline">${headline}</p>
         ${sums ? `<p class="epb-sums">${sums}</p>` : ""}
+        ${working ? `<p class="epb-working">${working}</p>` : ""}
         ${explain ? `<p class="epb-rule">${rule}</p>` : ""}
         ${notes.map((n) => `<p class="epb-prompt">${n}</p>`).join("")}
       </section>`;
@@ -509,5 +583,10 @@ Hooks.once("ready", () => {
   Hooks.on("updateActor", refreshPanel);
   Hooks.on("createActiveEffect", refreshPanel);
   Hooks.on("deleteActiveEffect", refreshPanel);
+  // An effect being switched on or off fires update, not create or delete, so
+  // without this a charm toggled mid-combat left the panel showing stale
+  // numbers.
+  Hooks.on("updateActiveEffect", refreshPanel);
+  Hooks.on("updateToken", refreshPanel);
   Hooks.on("updateItem", refreshPanel);
 });
