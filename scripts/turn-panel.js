@@ -170,6 +170,7 @@ class TurnPanel extends ApplicationV2 {
     return [
       this.#selfBlock(actor, reforged),
       this.#targetBlock(target, state, reforged),
+      this.#verdictBlock(actor, target, state, reforged),
       this.#attackBlock(actor, allow, why),
       this.#sorceryBlock(actor, allow, why),
       this.#otherBlock(),
@@ -239,6 +240,71 @@ class TurnPanel extends ApplicationV2 {
         <p class="epb-target-name">${esc(target.name)}</p>
         <p><span class="epb-chip ${cls}">${label}</span></p>
         <p class="epb-note">${hint}</p>
+      </section>`;
+  }
+
+  /**
+   * The panel's opinion, rather than a menu. Names the move, does the one sum
+   * that decides it, and states the rule behind it.
+   */
+  #verdictBlock(actor, target, state, reforged) {
+    const explain = game.settings.get(MODULE_ID, "explain");
+    const power = actor.system?.power?.value ?? 0;
+
+    // Characters carry defense directly; antagonists may only have the parts.
+    const defenseOf = (a) =>
+      a?.system?.defense?.value ??
+      Math.max(a?.system?.evasion?.value ?? 0, a?.system?.parry?.value ?? 0);
+
+    let headline = "Pick a target";
+    let sums = "";
+    let rule =
+      "The roller reads Defense, Soak and Poise from your target, so target a token before rolling.";
+
+    if (target) {
+      const def = defenseOf(target);
+      const soak = target.system?.soak?.value ?? 0;
+      const poise = target.system?.poise?.value ?? 0;
+
+      if (state === "standing") {
+        headline = "Wither them";
+        sums = `<b>${def + poise}</b> successes Breaks them: ${def} to beat Defense, then ${poise} more for their Poise.`;
+        rule = "A target who still has Poise can only be hit by withering attacks. They Break when your extra successes reach their Poise.";
+      } else if (state === "break") {
+        headline = "Strike decisively";
+        sums = `Damage is the Power you wager (you hold <b>${power}</b>) plus extra successes over ${def} Defense, minus ${soak} Soak.`;
+        rule = "In Break they can only be hit by decisive attacks, and their Poise cannot fall further until they rebuild it.";
+      } else if (state === "group") {
+        headline = "Strike decisively";
+        sums = `${def} Defense, ${soak} Soak. Forcing a rout check earns you Size + 1 Power.`;
+        rule = "Battle groups have no Poise, so every attack on them is decisive. They cannot be withered outside a grapple.";
+      } else {
+        const hardness = target.system?.hardness?.value ?? 0;
+        headline = "Your call";
+        sums = `A decisive attack needs ${hardness} Power or more and you hold <b>${power}</b>. Defense ${def}, Soak ${soak}.`;
+        rule = "Standard rules: both attack types stay open, and a decisive attack needs Power at least equal to their Hardness.";
+      }
+    }
+
+    const notes = [];
+    if (reforged && inBreak(actor)) {
+      const poise = actor.system?.poise ?? { value: 0, max: 0 };
+      const togo = Math.max(0, (poise.max ?? 0) - (poise.value ?? 0));
+      notes.push(`You are in Break. Power you gain refills Poise first, ${togo} to go. Ask an ally to Defend Other.`);
+    }
+    if (reforged && state === "standing" && power > 0) {
+      notes.push(`Your ${power} Power is waiting for the Break: withering attacks don't spend it.`);
+    }
+    if (reforged && state === "break" && power === 0) {
+      notes.push("No Power to wager, but a decisive attack still lands on extra successes alone.");
+    }
+
+    return `
+      <section class="epb-verdict" data-state="${state}">
+        <p class="epb-headline">${headline}</p>
+        ${sums ? `<p class="epb-sums">${sums}</p>` : ""}
+        ${explain ? `<p class="epb-rule">${rule}</p>` : ""}
+        ${notes.map((n) => `<p class="epb-prompt">${n}</p>`).join("")}
       </section>`;
   }
 
@@ -392,6 +458,15 @@ function shouldOpenFor(actor) {
 }
 
 Hooks.once("init", () => {
+  game.settings.register(MODULE_ID, "explain", {
+    name: "Explain the rule",
+    hint: "Shows the rule behind each recommendation. Turn off once the table knows Combat Reforged.",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
   game.settings.register(MODULE_ID, "autoOpen", {
     name: "Open automatically on your turn",
     hint: "Opens the panel when a combat turn reaches a character you control.",

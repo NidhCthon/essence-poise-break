@@ -207,3 +207,48 @@
 .essence-poise-break .epb-spell.epb-unaffordable {
   opacity: 0.45;
 }
+
+/* ---- the verdict: what to do, and why ---- */
+
+.essence-poise-break .epb-verdict {
+  --epb-state: var(--epb-jade);
+  border-top: 1px solid var(--epb-line);
+  border-bottom: 1px solid var(--epb-line);
+  padding: 10px 0;
+  gap: 4px;
+}
+
+.essence-poise-break .epb-verdict[data-state="break"],
+.essence-poise-break .epb-verdict[data-state="group"] { --epb-state: var(--epb-gold); }
+.essence-poise-break .epb-verdict[data-state="none"] { --epb-state: var(--epb-muted); }
+
+.essence-poise-break .epb-headline {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--epb-state);
+  line-height: 1.2;
+}
+
+.essence-poise-break .epb-sums {
+  font-size: 13px;
+}
+
+.essence-poise-break .epb-sums b {
+  font-variant-numeric: tabular-nums;
+  color: var(--epb-state);
+}
+
+/* The rule behind the call. Muted, because you stop reading it once you know
+   the system - and it can be switched off entirely in settings. */
+.essence-poise-break .epb-rule {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--epb-muted);
+}
+
+.essence-poise-break .epb-prompt {
+  font-size: 12px;
+  color: var(--epb-break);
+  padding-left: 10px;
+  border-left: 2px solid var(--epb-break);
+}

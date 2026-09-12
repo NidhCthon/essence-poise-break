@@ -10,6 +10,12 @@ standard rules and leaves both attack types available.
 
 ## What it does
 
+- **Tells you what to do, and why.** A verdict line names the move, does the sum
+  that decides it — "7 successes Breaks them: 4 to beat Defense, then 3 more for
+  their Poise" — and states the rule behind it. The explanation can be switched
+  off per user once your table knows the system.
+- Prompts for the situation you're actually in: that your Power is idle until
+  the target Breaks, or that being in Break means Power refills Poise first.
 - Shows your Power, Poise (or Hardness) and motes at a glance.
 - Reads your target's token and labels them **Standing**, **In Break** or a
   **battle group**.
@@ -63,7 +69,8 @@ world.
 
 The panel opens by itself when a combat turn reaches a character you control.
 Players get their own characters; the Storyteller gets the ones no player owns.
-Turn that off per-user in **Configure Settings → Module Settings**.
+Turn that off per-user in **Configure Settings → Module Settings**, where you
+can also switch off the rule explanations.
 
 **Target a token before rolling.** The system's roller reads Defense, Soak and
 Poise from your target, so an untargeted attack can't report whether they Broke.
