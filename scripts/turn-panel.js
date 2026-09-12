@@ -171,6 +171,25 @@ function targetNumbers(target, reforged) {
   };
 }
 
+/**
+ * What a social influence roll has to beat.
+ *
+ * Deliberately not part of targetNumbers(). That function mirrors the
+ * condition modifiers the roller applies to Defense - prone, surprised,
+ * grappled, wounds - and the roller applies none of them to Resolve. Sharing
+ * the two would imply a prone target is easier to talk round, which is the
+ * confusion this block exists to prevent.
+ *
+ * The Intimacy and Virtue adjustment is not predicted here. The roller asks
+ * for it when the roll is declared and applies it itself, and which
+ * Intimacies apply is a table judgement, so guessing would produce a target
+ * number that is confidently wrong.
+ */
+function socialNumbers(target) {
+  const resolve = target?.system?.resolve?.value ?? 0;
+  return { resolve, floor: 1 };
+}
+
 /* -------------------------------------------- */
 /*  The panel                                   */
 /* -------------------------------------------- */
@@ -299,6 +318,7 @@ class TurnPanel extends ApplicationV2 {
       this.#verdictBlock(actor, target, state, reforged),
       this.#attackBlock(actor, allow, why),
       this.#sorceryBlock(actor, allow, why),
+      this.#socialBlock(target),
       this.#otherBlock(),
       this.#footer(reforged, target)
     ].join("");
@@ -541,6 +561,41 @@ class TurnPanel extends ApplicationV2 {
       </button>`;
   }
 
+  #socialBlock(target) {
+    const explain = game.settings.get(MODULE_ID, "explain");
+    const button =
+      `<button type="button" class="epb-btn" data-action="roll" ` +
+      `data-roll-type="social">Social influence</button>`;
+
+    if (!target) {
+      return `
+        <section class="epb-social">
+          <p class="epb-label">Social influence</p>
+          <p class="epb-working">Target a token to see the Resolve you need to beat.</p>
+          <div class="epb-buttons">${button}</div>
+        </section>`;
+    }
+
+    const { resolve, floor } = socialNumbers(target);
+    const name = esc(target.name ?? "your target");
+    const prompts = [
+      "Appealing to an Intimacy or Virtue they hold lowers Resolve; arguing " +
+        `against one raises it. It never falls below ${floor}.`,
+      "Successes above their Resolve are what the influence buys."
+    ];
+
+    return `
+      <section class="epb-social">
+        <p class="epb-label">Social influence</p>
+        <p class="epb-sums"><b>${resolve}</b> successes to move ${name}, before Intimacies and Virtues.</p>
+        ${explain
+          ? `<p class="epb-rule">Resolve is not touched by prone, surprise, grappling or wounds - those reduce Defense only. Influence is resisted the same whatever state they are in.</p>`
+          : ""}
+        ${prompts.map((p) => `<p class="epb-prompt">${p}</p>`).join("")}
+        <div class="epb-buttons">${button}</div>
+      </section>`;
+  }
+
   #otherBlock() {
     return `
       <section class="epb-other">
@@ -548,7 +603,6 @@ class TurnPanel extends ApplicationV2 {
         <div class="epb-buttons">
           <button type="button" class="epb-btn" data-action="roll" data-roll-type="buildPower"
             data-tooltip="Attribute + Ability vs Difficulty 3. Cannot be flurried.">Build Power</button>
-          <button type="button" class="epb-btn" data-action="roll" data-roll-type="social">Social</button>
           <button type="button" class="epb-btn" data-action="roll" data-roll-type="base">Other</button>
         </div>
       </section>`;

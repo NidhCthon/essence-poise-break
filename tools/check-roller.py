@@ -1,10 +1,15 @@
 """Watch the part of the Exalted Essence roller that this module mirrors.
 
-`targetNumbers()` in scripts/turn-panel.js reproduces the modifiers the
-system's roller applies to a target: prone, surprised, cover, concealment,
-grappling and the wound penalty. That duplication is deliberate - the panel
-has to predict the roll before the roller runs - but it means the module can
-fall out of step when the system changes.
+The panel reproduces two pieces of the system's roller, because it has to
+say what a roll needs before the roller runs:
+
+* `targetNumbers()` mirrors the modifiers applied to a target - prone,
+  surprised, cover, concealment, grappling and the wound penalty.
+* `socialNumbers()` and the social block mirror how influence resolves
+  against Resolve, including that none of those modifiers apply to it.
+
+That duplication is deliberate, but it means the module can fall out of step
+when the system changes.
 
 This extracts that block from the system's source and compares it with a
 fingerprint committed alongside. Run it on a schedule and a change upstream
@@ -33,15 +38,21 @@ ANCHOR = "if (this.object.target.actor.effects) {"
 WOUND = re.compile(r"^.*this\.object\.defense\s*-=\s*this\.object\.target\.actor"
                    r"\.system\.health\.penalty.*$", re.M)
 
+# How influence resolves, and where Resolve is taken from the target.
+SOCIAL_ANCHOR = "_socialInfluence() {"
+SOCIAL_SOURCE = re.compile(
+    r"^.*this\.object\.resolve\s*=\s*this\.object\.target\.actor"
+    r"\.system\.resolve\.value.*$", re.M)
+
 
 def fetch(url):
     with urllib.request.urlopen(url, timeout=60) as response:
         return response.read().decode("utf-8")
 
 
-def extract(source):
-    """The condition block, plus the wound line, with whitespace normalised."""
-    start = source.find(ANCHOR)
+def braced_block(source, anchor):
+    """The text from an anchor to the brace that closes it."""
+    start = source.find(anchor)
     if start == -1:
         return None
     depth, end = 0, None
@@ -55,12 +66,35 @@ def extract(source):
                 break
     if end is None:
         return None
-    block = source[start:end]
+    return source[start:end]
+
+
+def normalise(text):
+    """Whitespace-only edits are not drift."""
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def extract(source):
+    """Each watched block, by name, or None if one cannot be found."""
+    blocks = {}
+
+    conditions = braced_block(source, ANCHOR)
+    if conditions is None:
+        return None
     wound = WOUND.search(source)
     if wound:
-        block += "\n" + wound.group(0)
-    # Whitespace-only edits are not drift.
-    return re.sub(r"\s+", " ", block).strip()
+        conditions += "\n" + wound.group(0)
+    blocks["conditions"] = normalise(conditions)
+
+    social = braced_block(source, SOCIAL_ANCHOR)
+    if social is None:
+        return None
+    source_line = SOCIAL_SOURCE.search(source)
+    if source_line:
+        social += "\n" + source_line.group(0)
+    blocks["social"] = normalise(social)
+
+    return blocks
 
 
 def main():
@@ -69,20 +103,25 @@ def main():
                         help="record the current block as the expected one")
     args = parser.parse_args()
 
-    block = extract(fetch(SOURCE))
-    if block is None:
-        print("FAIL: could not find the condition block in the roller.")
-        print("The system has been restructured; check targetNumbers() by hand.")
+    blocks = extract(fetch(SOURCE))
+    if blocks is None:
+        print("FAIL: could not find a watched block in the roller.")
+        print("The system has been restructured; check targetNumbers() and "
+              "the social block by hand.")
         print(SOURCE)
         return 1
 
-    digest = hashlib.sha256(block.encode("utf-8")).hexdigest()
+    digests = {name: hashlib.sha256(text.encode("utf-8")).hexdigest()
+               for name, text in blocks.items()}
 
     if args.update:
         BASELINE.write_text(json.dumps(
-            {"sha256": digest, "source": SOURCE, "block": block}, indent=2
-        ) + "\n", encoding="utf-8")
-        print("recorded {}".format(digest[:16]))
+            {"source": SOURCE,
+             "blocks": {name: {"sha256": digests[name], "block": blocks[name]}
+                        for name in blocks}},
+            indent=2) + "\n", encoding="utf-8")
+        for name in sorted(digests):
+            print("recorded {:11s} {}".format(name, digests[name][:16]))
         return 0
 
     if not BASELINE.exists():
@@ -90,19 +129,32 @@ def main():
         return 1
 
     expected = json.loads(BASELINE.read_text(encoding="utf-8"))
-    if expected["sha256"] == digest:
-        print("unchanged ({})".format(digest[:16]))
+    if "blocks" not in expected:
+        print("FAIL: the baseline predates the social block being watched.")
+        print("Check the module still matches the roller, then re-record "
+              "with --update.")
+        return 1
+
+    what = {"conditions": "targetNumbers() in scripts/turn-panel.js",
+            "social": "socialNumbers() and the social block"}
+    changed = [name for name in blocks
+               if expected["blocks"].get(name, {}).get("sha256")
+               != digests[name]]
+    if not changed:
+        print("unchanged ({})".format(
+            " ".join("{} {}".format(n, digests[n][:8]) for n in sorted(blocks))))
         return 0
 
-    print("CHANGED: the roller's condition handling is no longer what this "
-          "module mirrors.")
-    print()
-    print("was:", expected["block"][:600])
-    print()
-    print("now:", block[:600])
-    print()
-    print("Check targetNumbers() in scripts/turn-panel.js, update it if a "
-          "modifier moved, then re-record with --update.")
+    for name in changed:
+        print("CHANGED: {} is no longer what this module mirrors.".format(name))
+        print()
+        print("was:", expected["blocks"].get(name, {}).get("block", "")[:500])
+        print()
+        print("now:", blocks[name][:500])
+        print()
+        print("Check {}, update it if the rule moved, then re-record with "
+              "--update.".format(what.get(name, "the panel")))
+        print()
     return 1
 
 
