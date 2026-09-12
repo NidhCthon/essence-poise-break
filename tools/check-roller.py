@@ -38,6 +38,11 @@ ANCHOR = "if (this.object.target.actor.effects) {"
 WOUND = re.compile(r"^.*this\.object\.defense\s*-=\s*this\.object\.target\.actor"
                    r"\.system\.health\.penalty.*$", re.M)
 
+# Where the roller decides which of the target's numbers is its Defense.
+# This is not part of the condition block below it, and the panel got it
+# wrong for every character target until it was watched.
+DEFENCE_ANCHOR = "if (this.object.target.actor.type === 'npc') {"
+
 # How influence resolves, and where Resolve is taken from the target.
 SOCIAL_ANCHOR = "_socialInfluence() {"
 SOCIAL_SOURCE = re.compile(
@@ -85,6 +90,17 @@ def extract(source):
     if wound:
         conditions += "\n" + wound.group(0)
     blocks["conditions"] = normalise(conditions)
+
+    defence = braced_block(source, DEFENCE_ANCHOR)
+    if defence is None:
+        return None
+    # The else branch is the half that applies to characters, so take the
+    # whole if/else rather than just the npc arm.
+    after = source[source.find(DEFENCE_ANCHOR) + len(defence):]
+    else_block = braced_block(after, "else {")
+    if else_block:
+        defence += " " + else_block
+    blocks["defence"] = normalise(defence)
 
     social = braced_block(source, SOCIAL_ANCHOR)
     if social is None:
@@ -136,6 +152,7 @@ def main():
         return 1
 
     what = {"conditions": "targetNumbers() in scripts/turn-panel.js",
+            "defence": "the baseDefense branch in targetNumbers()",
             "social": "socialNumbers() and the social block"}
     changed = [name for name in blocks
                if expected["blocks"].get(name, {}).get("sha256")

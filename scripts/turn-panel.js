@@ -123,9 +123,16 @@ function legality(target, reforged) {
  */
 function targetNumbers(target, reforged) {
   const has = (name) => !!target?.effects?.some((e) => e.name === name);
+  // The roller picks the target's Defense by actor type: an NPC has a single
+  // Defense, while a character defends with the better of Parry and Evasion.
+  // Reading Defense first and falling back only when it is missing looks
+  // equivalent and is not: every actor has a Defense field, defaulting to
+  // zero, so the fallback never fired and characters all showed Defense 0.
   const baseDefense =
-    target?.system?.defense?.value ??
-    Math.max(target?.system?.evasion?.value ?? 0, target?.system?.parry?.value ?? 0);
+    target?.type === "npc"
+      ? target?.system?.defense?.value ?? 0
+      : Math.max(target?.system?.parry?.value ?? 0,
+                 target?.system?.evasion?.value ?? 0);
   const basePoise = target?.system?.poise?.value ?? 0;
 
   let defense = baseDefense;
