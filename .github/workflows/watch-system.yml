@@ -1,0 +1,29 @@
+name: Watch the system roller
+
+# The panel mirrors the roller's condition modifiers so it can predict a roll
+# before the roller runs. This job notices when the system changes them, so
+# drift turns up as a failed run rather than as advice that is quietly a point
+# out at someone's table.
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"   # Mondays, 07:00 UTC
+  workflow_dispatch:
+  push:
+    paths:
+      - "tools/check-roller.py"
+      - ".roller-watch.json"
+      - ".github/workflows/watch-system.yml"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Compare the roller's condition block with what we mirror
+        run: python tools/check-roller.py

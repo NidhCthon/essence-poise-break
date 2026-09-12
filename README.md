@@ -103,6 +103,29 @@ status is enough.
 The panel re-renders when you change target, when Break is applied or removed,
 and when Power or Poise changes.
 
+## Staying in step with the system
+
+`targetNumbers()` mirrors the modifiers the system's roller applies to a target
+— prone, surprised, cover, concealment, grappling, wounds — because the panel
+has to predict a roll before the roller runs. Duplicated logic drifts, so three
+things watch for it:
+
+- **The panel checks itself against each roll.** When you roll from a button
+  here, it compares what it advised with what the roller actually computed and
+  says so if they differ, naming both numbers. Purely diagnostic, and wrapped so
+  a broken check can never break a roll.
+- **A weekly job watches the system's source.** `tools/check-roller.py` extracts
+  the roller's condition block and compares it with the fingerprint in
+  `.roller-watch.json`. A change upstream fails the run, so you hear about it
+  before a session rather than during one.
+- **The verified system version is recorded.** The module notes which version it
+  was checked against and mentions it in the console when a world runs a
+  different one.
+
+Fixing drift is one function. The panel's working line tells you which modifier
+disagreed; correct `targetNumbers()`, then re-record with
+`python tools/check-roller.py --update`.
+
 ## Known limits
 
 - Only **equipped** weapons appear, since `weaponAttack` needs a weapon's uuid.

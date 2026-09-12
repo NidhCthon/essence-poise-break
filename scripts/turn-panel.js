@@ -18,6 +18,16 @@
 const MODULE_ID = "essence-poise-break";
 const SYSTEM_ID = "exaltedessence";
 
+/**
+ * The system version whose condition modifiers targetNumbers() was checked
+ * against. A different version is not a problem in itself - it is only the
+ * context you want if a number ever disagrees with a roll.
+ */
+const VERIFIED_SYSTEM = "3.1.0";
+
+/** Only nag once per session; the console keeps the full record. */
+let driftWarned = false;
+
 const { ApplicationV2 } = foundry.applications.api;
 
 /* -------------------------------------------- */
@@ -196,6 +206,55 @@ class TurnPanel extends ApplicationV2 {
       return;
     }
     await api.weaponAttack(uuid, attack);
+    this.constructor.checkAgainstRoller(this.prediction);
+  }
+
+  /**
+   * Compare what the panel advised against what the roller actually computed.
+   *
+   * targetNumbers() mirrors the system's condition modifiers, so it can fall
+   * out of step when the system changes. The roller is the authority, and it
+   * publishes its working on game.rollForm, so the moment a player rolls we
+   * can tell whether the advice still matches - and say so with both numbers
+   * rather than leaving them to wonder why it felt wrong.
+   *
+   * Purely diagnostic: any failure here is swallowed, because a broken check
+   * must never break a roll.
+   */
+  static checkAgainstRoller(prediction) {
+    if (!prediction) return;
+    setTimeout(() => {
+      try {
+        const rolled = game.rollForm?.object;
+        if (!rolled || rolled.target?.actor?.id !== prediction.targetId) return;
+
+        const differences = [];
+        if (Number.isFinite(rolled.defense) && rolled.defense !== prediction.defense) {
+          differences.push(`Defense: panel ${prediction.defense}, roller ${rolled.defense}`);
+        }
+        if (usingReforged() && Number.isFinite(rolled.poise) &&
+            rolled.poise !== prediction.poise) {
+          differences.push(`Poise: panel ${prediction.poise}, roller ${rolled.poise}`);
+        }
+        if (!differences.length) return;
+
+        console.warn(
+          `${MODULE_ID} | condition maths out of step with the system `
+          + `(checked against ${SYSTEM_ID} ${VERIFIED_SYSTEM}, this world runs `
+          + `${game.system.version}): ${differences.join(" | ")}. `
+          + "Fix targetNumbers() in scripts/turn-panel.js."
+        );
+        if (!driftWarned) {
+          driftWarned = true;
+          ui.notifications.warn(
+            `Poise & Break: ${differences[0]}. Its condition maths may be out of `
+            + "step with the system - see the console."
+          );
+        }
+      } catch (err) {
+        // Diagnostics must never interfere with play.
+      }
+    }, 600);
   }
 
   static async #onRoll(event, element) {
@@ -215,6 +274,7 @@ class TurnPanel extends ApplicationV2 {
       {},
       data
     ).render(true);
+    if (ability) this.constructor.checkAgainstRoller(this.prediction);
   }
 
   async _renderHTML() {
@@ -320,12 +380,17 @@ class TurnPanel extends ApplicationV2 {
     let headline = "Pick a target";
     let sums = "";
     let working = "";
+    this.prediction = null;
     let rule =
       "The roller reads Defense, Soak and Poise from your target, so target a token before rolling.";
 
     if (target) {
       const n = targetNumbers(target, reforged);
       const { defense, poise, soak } = n;
+
+      // Kept so a roll launched from this panel can be checked against what
+      // the roller actually computed.
+      this.prediction = { targetId: target.id, defense, poise };
 
       if (state === "standing") {
         headline = "Wither them";
@@ -566,6 +631,14 @@ Hooks.once("ready", () => {
       ),
     close: () => panel?.close()
   };
+
+  if (game.system.version !== VERIFIED_SYSTEM) {
+    console.log(
+      `${MODULE_ID} | condition maths were verified against ${SYSTEM_ID} `
+      + `${VERIFIED_SYSTEM}; this world runs ${game.system.version}. If a panel `
+      + "number ever disagrees with a roll, the panel will say so."
+    );
+  }
 
   Hooks.on("updateCombat", (combat) => {
     const actor = combat.combatant?.actor;
