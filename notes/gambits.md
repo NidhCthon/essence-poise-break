@@ -56,6 +56,62 @@ single time. The warning about the panel's maths disagreeing with the roller
 could not have fired since it was written. Fixed by awaiting anything thenable
 before reading `.object`, which covers the system's assignment as well as ours.
 
+## Which gambits actually resolve
+
+`_resolveGambit()` in the system handles six of the ten:
+
+| Gambit | What the system applies |
+| --- | --- |
+| Disarm | `disarmed` status |
+| Knockdown | `prone` status |
+| Ensnare | `ensnared` status |
+| Reveal Weakness | effect: Soak −2, or halved if Soak ≥ 6, for *extra successes* rounds |
+| Pull | Defense penalty = extra successes, 1 round |
+| Distract | Defense penalty = extra successes + 1, 1 round |
+
+**Knockback and Grapple fall through the switch entirely**, though the book
+gives both a Defense penalty. Pilfer and Unhorse also fall through, and should:
+taking an item and choosing between prone and Soak are table decisions.
+
+So the panel finishes those two. Not by writing to the target — by wrapping
+`_resolveGambit` on the form it just built and pushing into the same two arrays
+the system reads, `newTargetData.effects` and `addStatuses`. The system's
+`_updateTargetActor()` then applies them, which matters because it has a
+GM/socket split: writing to a target directly from a module works for the
+Storyteller and fails silently for everyone else.
+
+Each addition checks whether it is already there, so if the system grows a case
+of its own the panel stops adding a second one.
+
+## The grappling status has never done anything
+
+Grapple was going to be simple — add the `grappling` status and let the roller
+apply the −1 it already has for it:
+
+    if (combatReforged && target.actor.effects.some(e => e.name === 'grappling')) {
+        this.object.defense -= 1;
+    }
+
+That check cannot fire. Foundry localises a status effect's name when it builds
+it — `effectData.name = _loc(effectData.name)` in `ActiveEffect.fromStatusEffect`
+— and the system's config gives the status `name: 'ExEss.Grappling'`, which
+en.json renders as **"Grappling"**. `"Grappling" === "grappling"` is false. The
+id lives in `effect.statuses`, which the check does not look at.
+
+The same shape applies to every condition in that block: `prone`, `heavycover`,
+`surprised` and the rest are all compared by lowercase name against effects
+Foundry has named "Prone", "Heavy Cover", "Surprised". `targetNumbers()` in this
+module mirrors the comparison exactly, so the panel and the roller still agree
+with each other — which is the property that matters here — but neither of them
+is reacting to a status toggled from the token HUD.
+
+That is worth reporting upstream rather than working around. What the panel does
+instead is carry the −1 on the Grappling effect itself, as a `changes` entry, so
+it applies regardless of the name comparison and disappears when the status is
+cleared. If the system ever fixes the check to read `statuses`, the two would
+stack — `tools/check-roller.py` watches that exact block, so it would fail
+before a session rather than during one.
+
 ## What is not covered
 
 - **Hero's Trick.** A gambit can be paid for at Step 5 out of the Power a
@@ -67,3 +123,9 @@ before reading `.object`, which covers the system's assignment as well as ours.
   every Size above 2. The system does not apply it and neither does the panel.
 - **Escape and Throw.** Combat Reforged makes these grapple-specific actions
   rather than gambits, so they belong to a grapple flow the panel does not have.
+- **Ending a grapple.** Nothing clears the Grappling effect when someone
+  escapes. Both tokens keep it until a person removes it.
+- **Knockback's movement.** The Defense penalty is applied; moving the token a
+  range band is left alone, since range bands are not a grid distance.
+- **Rolls from anywhere else.** Only a gambit launched from the panel is
+  finished. From the sheet or a macro you get the system's behaviour.

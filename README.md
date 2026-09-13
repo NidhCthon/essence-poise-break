@@ -32,6 +32,12 @@ standard rules and leaves both attack types available.
   roller with that gambit already selected and the Power already wagered. A
   gambit you can't use stays listed with the reason: Pull needs a weapon with
   the pull tag, Disarm needs a target to price it against.
+- **Finishes the two gambits the system doesn't.** Knockback and Grapple fall
+  through the system's gambit resolution without applying anything. The panel
+  gives Knockback its Defense penalty of 1 per extra success, and Grapple the
+  −1 both sides take — as a single Grappling effect that carries the penalty,
+  so clearing the status clears the penalty with it. Rows the panel finishes
+  say so.
 - Tells you, when you are in Break, how much Poise you still need — Power you
   gain refills Poise before it reaches your pool.
 - For sorcerers, a **Sorcery** section: your current Will out of 10, every spell
@@ -41,9 +47,15 @@ standard rules and leaves both attack types available.
 
 ## What it does not do
 
-It never rolls dice, applies damage or changes a sheet. Every button opens the
-system's own roller, which does all of that. If the system's maths changes, this
-module needs no update.
+It never rolls dice or applies damage. Every button opens the system's own
+roller, which does all of that.
+
+It changes a sheet in exactly one place: **Knockback and Grapple**. The system
+resolves six of the ten gambits and leaves those two applying nothing, though
+the book gives both a Defense penalty — so the panel supplies it. Even then it
+does not write to the target itself; it adds to the arrays the system is about
+to read, so the system's own update path applies them, including the socket
+relay that makes it work for a player who is not the Storyteller.
 
 ## Player guide
 
@@ -146,6 +158,13 @@ disagreed; correct `targetNumbers()`, then re-record with
   The panel fills that in — the higher of the target's Physique or Athletics,
   or half an antagonist's primary pool — and says so on the row, because which
   pool is the relevant one is the Storyteller's call.
+- **The panel only finishes a gambit it launched.** Roll one from the character
+  sheet or a hotbar macro and you get the system's behaviour, penalty and all
+  missing. There is no global hook, deliberately: one roller patched from a
+  module is enough surface area.
+- **Ending a grapple is manual.** The panel adds the Grappling effect to both
+  sides; nothing removes it when someone escapes. Clear the status on both
+  tokens — the penalty goes with it.
 - `game.exaltedessence` is the system's macro API rather than a documented one.
   It is stable enough for hotbar macros, but a system update could rename it —
   in which case the buttons report the error rather than failing silently.

@@ -10,6 +10,12 @@
  *   game.exaltedessence.weaponAttack(itemUuid, "withering" | "decisive" | "gambit")
  *   new game.exaltedessence.RollForm(actor, options, {}, { rollType }).render(true)
  *
+ * The one exception is a gambit. Knockback and Grapple fall through the
+ * system's own gambit resolution and apply nothing, so the panel supplies
+ * their Defense penalty - and even then it pushes into the arrays the system
+ * is about to read rather than writing to the target itself. See
+ * resolveMissingGambits().
+ *
  * Legality comes from the target's own token: the system registers "break" as
  * a status effect and clears it itself once Poise is restored, so reading that
  * status is enough to know which attack applies.
@@ -301,6 +307,7 @@ function priceGambit(gambit, weapon, target, defense, reforged) {
       ? "The Storyteller may price this off a different pool."
       : "";
     row.unpriced = true;
+    row.panelApplies = true;
     return row;
   }
 
@@ -320,7 +327,132 @@ function priceGambit(gambit, weapon, target, defense, reforged) {
     row.working = `${gambit.cost} &minus; 1 for ${gambit.discount}`;
   }
   if (reforged && gambit.reforged) row.note = gambit.reforged;
+  if (PANEL_RESOLVES.includes(gambit.key)) row.panelApplies = true;
   return row;
+}
+
+/* -------------------------------------------- */
+/*  Finishing the gambits the system leaves open */
+/* -------------------------------------------- */
+
+/**
+ * Which gambits the system resolves, and which it does not.
+ *
+ * `_resolveGambit()` in the system's dice-roller handles six of the ten:
+ * Disarm, Knockdown and Ensnare set a status; Reveal Weakness cuts Soak; Pull
+ * and Distract apply a Defense penalty. Knockback and Grapple fall through the
+ * switch and do nothing at all - even though the book gives both a Defense
+ * penalty. Pilfer and Unhorse are left out on purpose: taking an item and
+ * choosing between prone and Soak are table decisions, not automatable ones.
+ */
+const SYSTEM_RESOLVES = ["disarm", "knockdown", "ensnare", "reveal_weakness",
+                         "pull", "distract"];
+const PANEL_RESOLVES = ["knockback", "grapple"];
+
+/** A -1 Defense change, written the way the system writes it for this type. */
+function defenceChanges(actor, value) {
+  return actor?.type === "npc"
+    ? [{ key: "system.defense.value", value: -value, mode: 2 }]
+    : [{ key: "system.evasion.value", value: -value, mode: 2 },
+       { key: "system.parry.value", value: -value, mode: 2 }];
+}
+
+/**
+ * The grapple effect: the status and its penalty in one document.
+ *
+ * Kept as a single effect on purpose. The system's own grapple penalty reads
+ * `e.name === 'grappling'`, but Foundry localises a status effect's name when
+ * it creates it, so the effect is called "Grappling" and that check never
+ * matches - which is why grappling costs nobody any Defense today. Carrying
+ * the change on the status itself means the penalty is applied, and that
+ * clearing the status clears the penalty with it rather than leaving a
+ * stray -1 behind.
+ */
+function grappleEffect(actor) {
+  return {
+    name: "Grappling",
+    img: "systems/exaltedessence/assets/icons/shaking-hands.svg",
+    statuses: ["grappling"],
+    origin: actor?.uuid,
+    disabled: false,
+    flags: {
+      "essence-poise-break": { grapple: true },
+      exaltedessence: { statusId: "grappling" }
+    },
+    changes: defenceChanges(actor, 1)
+  };
+}
+
+function alreadyGrappling(effects) {
+  return (effects ?? []).some((effect) => {
+    const statuses = effect?.statuses;
+    const has = statuses?.has ? statuses.has("grappling")
+      : Array.isArray(statuses) && statuses.includes("grappling");
+    return has || effect?.flags?.["essence-poise-break"]?.grapple;
+  });
+}
+
+/**
+ * Fill in what the system's gambit resolution misses, on this roll only.
+ *
+ * Wrapping the form's own `_resolveGambit` rather than applying effects here
+ * matters: everything pushed into `newTargetData.effects` and `addStatuses` is
+ * applied afterwards by the system's `_updateTargetActor()`, which already
+ * knows to relay through a socket when the roller is not a GM. Writing to the
+ * target directly from here would work for a Storyteller and fail silently for
+ * everyone else.
+ *
+ * Each addition checks first whether it is already there, so if the system
+ * grows a case of its own the panel stops adding a second one.
+ */
+function resolveMissingGambits(form) {
+  const original = form?._resolveGambit;
+  if (typeof original !== "function") {
+    console.warn(`${MODULE_ID} | the system's _resolveGambit is missing, so `
+      + "Knockback and Grapple will apply nothing. Check the panel against "
+      + `${SYSTEM_ID} ${game.system.version}.`);
+    return;
+  }
+
+  form._resolveGambit = function (postDefenseTotal = 0) {
+    original.call(this, postDefenseTotal);
+    try {
+      const object = this.object;
+      const target = object?.target?.actor;
+
+      if (object?.gambit === "knockback" && postDefenseTotal > 0) {
+        // The same treatment the system gives Pull, which the book prices
+        // identically: 1 Defense per extra success, until the round ends.
+        // Only when there are extra successes - Pull applies a (0) penalty
+        // with none, and one pointless effect on a token is enough.
+        const already = object.newTargetData?.effects?.some(
+          (e) => e?.flags?.exaltedessence?.statusId === "end_of_round");
+        if (!already) this._addEndofRoundDefensePenalty(postDefenseTotal);
+      }
+
+      if (object?.gambit === "grapple") {
+        object.updateTargetActorData = true;
+        if (!alreadyGrappling(object.newTargetData?.effects)) {
+          object.newTargetData.effects.push(grappleEffect(target));
+        }
+        // Both sides of a grapple take the penalty, and the roller only ever
+        // updates the target, so the attacker is the panel's to handle.
+        grappleTheAttacker(this.actor);
+      }
+    } catch (err) {
+      console.error(`${MODULE_ID} | could not finish the gambit`, err);
+    }
+  };
+}
+
+/** The grappler's own -1, on the actor the panel already owns. */
+async function grappleTheAttacker(actor) {
+  try {
+    if (!actor || alreadyGrappling(actor.effects)) return;
+    await actor.createEmbeddedDocuments("ActiveEffect", [grappleEffect(actor)]);
+  } catch (err) {
+    console.error(`${MODULE_ID} | could not grapple the attacker`, err);
+  }
 }
 
 /* -------------------------------------------- */
@@ -400,6 +532,7 @@ class TurnPanel extends ApplicationV2 {
     );
     form.object.gambit = gambit;
     form.object.powerSpent = Number(power) || 0;
+    resolveMissingGambits(form);
     // Assign the form, not the promise render() returns: the drift check reads
     // game.rollForm.object.
     game.rollForm = form;
@@ -715,10 +848,18 @@ class TurnPanel extends ApplicationV2 {
         }
         const working = row.working ? `<span class="epb-muted">${row.working}</span>` : "";
         const note = row.note ? `<span class="epb-gambit-why">${row.note}</span>` : "";
-        const unpriced = row.unpriced
-          ? `<span class="epb-gambit-why">The system has no cost for Grapple, so
-             the panel sets the Power itself &mdash; check it in the roller.</span>`
-          : "";
+        // Worth saying which side did the work, because on these rows it is
+        // the panel rather than the system, and that is where to look if a
+        // number or an effect ever looks wrong.
+        let applies = "";
+        if (row.unpriced) {
+          applies = `<span class="epb-gambit-why">The system has neither a cost
+            nor an effect for Grapple, so the panel supplies both the Power and
+            the &minus;1 Defense you each take.</span>`;
+        } else if (row.panelApplies) {
+          applies = `<span class="epb-gambit-why">The system resolves this one
+            to nothing, so the panel applies the Defense penalty itself.</span>`;
+        }
         return `<li class="epb-gambit-row">
             <button type="button" class="epb-gambit-pick" data-action="gambit"
               data-uuid="${weapon.uuid}" data-gambit="${row.key}"
@@ -727,7 +868,7 @@ class TurnPanel extends ApplicationV2 {
               <span class="epb-cost">${row.power} Power ${working}</span>
             </button>
             <span class="epb-gambit-why">${row.effect}</span>
-            ${note}${unpriced}
+            ${note}${applies}
           </li>`;
       })
       .join("");
