@@ -101,7 +101,11 @@ function legality(target, reforged) {
   allow.decisive = false;
   allow.gambit = false;
   why.decisive = `They still have ${poise} Poise. Wither them into Break first.`;
-  why.gambit = why.decisive;
+  // Not quite the same reason as decisive: Hero's Trick is the one way a
+  // gambit reaches a target who is still standing.
+  why.gambit = `${why.decisive} With Hero's Trick, wither them and spend the `
+    + "Power that attack earns on a gambit at Step 5 — but then it cannot "
+    + "Break them or cost them Poise.";
   return { allow, why, state: "standing" };
 }
 
@@ -197,6 +201,128 @@ function socialNumbers(target) {
   return { resolve, floor: 1 };
 }
 
+/**
+ * The gambits, and what the roller will charge for each.
+ *
+ * The system owns gambits already - CONFIG.EXALTEDESSENCE.gambits fills a
+ * dropdown, and the roller sets powerSpent from a cost table of its own. This
+ * mirrors that table rather than inventing one, because the panel opens the
+ * roller with the gambit already selected, and the roller only recomputes the
+ * cost when the selection *changes*. A pre-selected gambit therefore keeps the
+ * number set here, so a number that disagrees with the system would be spent.
+ * tools/check-roller.py watches the system's table for exactly that reason.
+ *
+ * `cost` is a number, or a name resolved against the target:
+ *   "defense"  the target's Defense, as the system does for Disarm.
+ *   "grapple"  Combat Reforged only, and the system has no cost for it.
+ */
+const GAMBITS = [
+  { key: "disarm", name: "Disarm", cost: "defense",
+    effect: "Knocks their weapon away and leaves them open." },
+  { key: "distract", name: "Distract", cost: 2,
+    effect: "Drops their Defense. May be rolled with Performance or Presence, "
+      + "and may go against Resolve instead of Defense." },
+  { key: "ensnare", name: "Ensnare", cost: 3, discount: "flexible",
+    effect: "Stops them moving. They can break free with Athletics or Close "
+      + "Combat." },
+  { key: "knockback", name: "Knockback", cost: 4, discount: "smashing",
+    effect: "Drives them one range band away and drops their Defense.",
+    reforged: "They cannot Rush you for a turn, and it may be rolled with "
+      + "Physique." },
+  { key: "knockdown", name: "Knockdown", cost: 4, discount: "smashing",
+    effect: "Puts them prone.",
+    reforged: "May be rolled with Physique." },
+  { key: "pilfer", name: "Pilfer", cost: 3,
+    effect: "Lifts one non-weapon item. Rolled with Stealth." },
+  { key: "pull", name: "Pull", cost: 4, tag: "pull",
+    effect: "Drags them one range band toward you." },
+  { key: "reveal_weakness", name: "Reveal Weakness", cost: 3,
+    effect: "Cuts their Soak, for everyone. May be rolled with Craft or War." },
+  { key: "unhorse", name: "Unhorse", cost: 5,
+    effect: "Unseats them from their mount." },
+  { key: "grapple", name: "Grapple", cost: "grapple", reforgedOnly: true,
+    effect: "Both of you take &minus;1 Defense, and neither can move until "
+      + "someone escapes." }
+];
+
+/**
+ * What Grapple costs under Combat Reforged: the higher of the target's
+ * Physique or Athletics, or half an antagonist's relevant pool.
+ *
+ * Which pool is "relevant" is the Storyteller's call, so the primary pool is
+ * used and the working is shown rather than presented as settled.
+ */
+function grappleCost(target) {
+  if (!target) return null;
+  if (target.type === "npc") {
+    const pool = target.system?.pools?.primary?.value ?? 0;
+    return { power: Math.ceil(pool / 2),
+             working: `half their primary pool (${pool})`,
+             soft: true };
+  }
+  const physique = target.system?.abilities?.physique?.value ?? 0;
+  const athletics = target.system?.abilities?.athletics?.value ?? 0;
+  const best = Math.max(physique, athletics);
+  return { power: best,
+           working: physique >= athletics
+             ? `their Physique ${physique}`
+             : `their Athletics ${athletics}` };
+}
+
+/**
+ * One gambit, priced for this weapon and target: what it costs, whether it can
+ * be used at all, and why not when it cannot.
+ */
+function priceGambit(gambit, weapon, target, defense, reforged) {
+  const tags = weapon?.system?.traits?.weapontags?.selected ?? {};
+  const row = { key: gambit.key, name: gambit.name, effect: gambit.effect };
+
+  if (gambit.reforgedOnly && !reforged) {
+    row.blocked = "Grappling is only a gambit under Combat Reforged.";
+    return row;
+  }
+  if (gambit.tag && !tags[gambit.tag]) {
+    row.blocked = `Needs a weapon with the ${gambit.tag} tag.`;
+    return row;
+  }
+
+  if (gambit.cost === "grapple") {
+    const grapple = grappleCost(target);
+    if (!grapple) {
+      row.blocked = "Costs the target's Physique or Athletics - pick a target.";
+      return row;
+    }
+    row.power = grapple.power;
+    row.working = grapple.working;
+    // The system lists Grapple in its dropdown but has no cost for it, so the
+    // roller would open with nothing wagered. Say so rather than let a player
+    // discover it mid-roll.
+    row.note = grapple.soft
+      ? "The Storyteller may price this off a different pool."
+      : "";
+    row.unpriced = true;
+    return row;
+  }
+
+  if (gambit.cost === "defense") {
+    if (!target) {
+      row.blocked = "Costs the target's Defense - pick a target.";
+      return row;
+    }
+    row.power = defense;
+    row.working = "their Defense";
+    return row;
+  }
+
+  row.power = gambit.cost;
+  if (gambit.discount && tags[gambit.discount]) {
+    row.power -= 1;
+    row.working = `${gambit.cost} &minus; 1 for ${gambit.discount}`;
+  }
+  if (reforged && gambit.reforged) row.note = gambit.reforged;
+  return row;
+}
+
 /* -------------------------------------------- */
 /*  The panel                                   */
 /* -------------------------------------------- */
@@ -205,6 +331,8 @@ class TurnPanel extends ApplicationV2 {
   constructor(actor, options = {}) {
     super(options);
     this.actor = actor;
+    /** Which weapon's gambit list is open, by uuid. */
+    this.openGambit = null;
   }
 
   static DEFAULT_OPTIONS = {
@@ -219,6 +347,8 @@ class TurnPanel extends ApplicationV2 {
     position: { width: 360, height: "auto" },
     actions: {
       attack: TurnPanel.#onAttack,
+      gambitMenu: TurnPanel.#onGambitMenu,
+      gambit: TurnPanel.#onGambit,
       roll: TurnPanel.#onRoll
     }
   };
@@ -232,6 +362,49 @@ class TurnPanel extends ApplicationV2 {
       return;
     }
     await api.weaponAttack(uuid, attack);
+    this.constructor.checkAgainstRoller(this.prediction);
+  }
+
+  /** Show or hide the gambit list under one weapon. */
+  static async #onGambitMenu(event, element) {
+    const { uuid } = element.dataset;
+    this.openGambit = this.openGambit === uuid ? null : uuid;
+    this.render();
+  }
+
+  /**
+   * Open the roller on a gambit that is already chosen and already paid for.
+   *
+   * The roller recomputes powerSpent only when the selection changes, so
+   * setting both here is what makes the pre-selection stick - and is why the
+   * cost must be the one the system would have reached itself.
+   */
+  static async #onGambit(event, element) {
+    const { uuid, gambit, power } = element.dataset;
+    const RollForm = game.exaltedessence?.RollForm;
+    if (!RollForm) {
+      ui.notifications.error("Exalted Essence's roller API was not found.");
+      return;
+    }
+    const weapon = await fromUuid(uuid);
+    if (!weapon?.parent) {
+      ui.notifications.warn(`Could not find the weapon ${uuid}.`);
+      return;
+    }
+
+    const form = new RollForm(
+      weapon.parent,
+      { classes: [" exaltedessence exaltedessence-dialog dice-roller"] },
+      {},
+      { rollType: "gambit", weapon: weapon.system }
+    );
+    form.object.gambit = gambit;
+    form.object.powerSpent = Number(power) || 0;
+    // Assign the form, not the promise render() returns: the drift check reads
+    // game.rollForm.object.
+    game.rollForm = form;
+    await form.render(true);
+    this.openGambit = null;
     this.constructor.checkAgainstRoller(this.prediction);
   }
 
@@ -249,9 +422,14 @@ class TurnPanel extends ApplicationV2 {
    */
   static checkAgainstRoller(prediction) {
     if (!prediction) return;
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
-        const rolled = game.rollForm?.object;
+        // The system sets game.rollForm to the promise render() returns, so
+        // reading .object straight off it finds undefined and the check
+        // silently never runs. Await anything thenable first.
+        const form = game.rollForm;
+        const settled = typeof form?.then === "function" ? await form : form;
+        const rolled = settled?.object;
         if (!rolled || rolled.target?.actor?.id !== prediction.targetId) return;
 
         const differences = [];
@@ -294,12 +472,14 @@ class TurnPanel extends ApplicationV2 {
     // attack with Sagacity in place of a combat Ability, and the roller takes
     // an ability and treats the weapon as optional.
     const data = ability ? { rollType, ability } : { rollType };
-    game.rollForm = new RollForm(
+    const form = new RollForm(
       this.actor,
       { classes: [" exaltedessence exaltedessence-dialog dice-roller"] },
       {},
       data
-    ).render(true);
+    );
+    game.rollForm = form;
+    await form.render(true);
     if (ability) this.constructor.checkAgainstRoller(this.prediction);
   }
 
@@ -318,12 +498,15 @@ class TurnPanel extends ApplicationV2 {
     const reforged = usingReforged();
     const target = currentTarget();
     const { allow, why, state } = legality(target, reforged);
+    // Disarm is priced off the target's Defense, so the gambit list needs the
+    // same adjusted number the verdict quotes.
+    const { defense } = targetNumbers(target, reforged);
 
     return [
       this.#selfBlock(actor, reforged),
       this.#targetBlock(target, state, reforged),
       this.#verdictBlock(actor, target, state, reforged),
-      this.#attackBlock(actor, allow, why),
+      this.#attackBlock(actor, allow, why, target, defense, reforged),
       this.#sorceryBlock(actor, allow, why),
       this.#socialBlock(target),
       this.#otherBlock(),
@@ -474,7 +657,7 @@ class TurnPanel extends ApplicationV2 {
       </section>`;
   }
 
-  #attackBlock(actor, allow, why) {
+  #attackBlock(actor, allow, why, target, defense, reforged) {
     const weapons = equippedWeapons(actor);
     if (!weapons.length) {
       return `<section class="epb-attacks"><p class="epb-label">Attacks</p>
@@ -485,6 +668,7 @@ class TurnPanel extends ApplicationV2 {
       .map((weapon) => {
         const name = esc(weapon.name);
         const over = weapon.system?.overwhelming ?? 0;
+        const open = this.openGambit === weapon.uuid;
         return `
         <div class="epb-weapon">
           <p class="epb-weapon-name">${name}
@@ -492,13 +676,63 @@ class TurnPanel extends ApplicationV2 {
           <div class="epb-buttons">
             ${this.#attackButton(weapon, "withering", "Withering", allow, why)}
             ${this.#attackButton(weapon, "decisive", "Decisive", allow, why)}
-            ${this.#attackButton(weapon, "gambit", "Gambit", allow, why)}
+            ${this.#gambitButton(weapon, open, allow, why)}
           </div>
+          ${open ? this.#gambitList(weapon, target, defense, reforged) : ""}
         </div>`;
       })
       .join("");
 
     return `<section class="epb-attacks"><p class="epb-label">Attacks</p>${rows}</section>`;
+  }
+
+  /** Opens the list rather than the roller: the gambit is chosen first. */
+  #gambitButton(weapon, open, allow, why) {
+    const ok = allow.gambit;
+    const reason = why.gambit ? esc(why.gambit) : "";
+    return `
+      <button type="button" class="epb-btn epb-gambit${open ? " epb-open" : ""}"
+        data-action="gambitMenu" data-uuid="${weapon.uuid}"
+        ${ok ? "" : "disabled"} ${reason ? `data-tooltip="${reason}"` : ""}>
+        Gambit${ok ? (open ? " &#9652;" : " &#9662;") : ""}
+      </button>`;
+  }
+
+  /**
+   * The gambits for this weapon, priced. A gambit that cannot be used stays
+   * listed with the reason, because "why can't I" is the question a hidden
+   * row leaves unanswered.
+   */
+  #gambitList(weapon, target, defense, reforged) {
+    const rows = GAMBITS
+      .map((gambit) => priceGambit(gambit, weapon, target, defense, reforged))
+      .map((row) => {
+        if (row.blocked) {
+          return `<li class="epb-gambit-row epb-blocked">
+              <span class="epb-gambit-name">${row.name}</span>
+              <span class="epb-gambit-why">${row.blocked}</span>
+            </li>`;
+        }
+        const working = row.working ? `<span class="epb-muted">${row.working}</span>` : "";
+        const note = row.note ? `<span class="epb-gambit-why">${row.note}</span>` : "";
+        const unpriced = row.unpriced
+          ? `<span class="epb-gambit-why">The system has no cost for Grapple, so
+             the panel sets the Power itself &mdash; check it in the roller.</span>`
+          : "";
+        return `<li class="epb-gambit-row">
+            <button type="button" class="epb-gambit-pick" data-action="gambit"
+              data-uuid="${weapon.uuid}" data-gambit="${row.key}"
+              data-power="${row.power}">
+              <span class="epb-gambit-name">${row.name}</span>
+              <span class="epb-cost">${row.power} Power ${working}</span>
+            </button>
+            <span class="epb-gambit-why">${row.effect}</span>
+            ${note}${unpriced}
+          </li>`;
+      })
+      .join("");
+
+    return `<ul class="epb-gambits">${rows}</ul>`;
   }
 
   #attackButton(weapon, type, label, allow, why) {

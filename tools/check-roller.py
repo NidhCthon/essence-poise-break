@@ -7,6 +7,9 @@ say what a roll needs before the roller runs:
   surprised, cover, concealment, grappling and the wound penalty.
 * `socialNumbers()` and the social block mirror how influence resolves
   against Resolve, including that none of those modifiers apply to it.
+* `GAMBITS` mirrors the roller's own gambit cost table. The panel opens the
+  roller with a gambit already chosen, and the roller recomputes the cost only
+  when the choice *changes* - so the panel's number is the one that is spent.
 
 That duplication is deliberate, but it means the module can fall out of step
 when the system changes.
@@ -42,6 +45,11 @@ WOUND = re.compile(r"^.*this\.object\.defense\s*-=\s*this\.object\.target\.actor
 # This is not part of the condition block below it, and the panel got it
 # wrong for every character target until it was watched.
 DEFENCE_ANCHOR = "if (this.object.target.actor.type === 'npc') {"
+
+# What the roller charges for each gambit. The first of the two copies in
+# the file is the live one, inside myFormHandler; the other sits in an
+# activateListeners left over from ApplicationV1 and never runs.
+GAMBIT_ANCHOR = "const gambitCosts = {"
 
 # How influence resolves, and where Resolve is taken from the target.
 SOCIAL_ANCHOR = "_socialInfluence() {"
@@ -110,6 +118,11 @@ def extract(source):
         social += "\n" + source_line.group(0)
     blocks["social"] = normalise(social)
 
+    gambits = braced_block(source, GAMBIT_ANCHOR)
+    if gambits is None:
+        return None
+    blocks["gambits"] = normalise(gambits)
+
     return blocks
 
 
@@ -153,7 +166,8 @@ def main():
 
     what = {"conditions": "targetNumbers() in scripts/turn-panel.js",
             "defence": "the baseDefense branch in targetNumbers()",
-            "social": "socialNumbers() and the social block"}
+            "social": "socialNumbers() and the social block",
+            "gambits": "the GAMBITS table in scripts/turn-panel.js"}
     changed = [name for name in blocks
                if expected["blocks"].get(name, {}).get("sha256")
                != digests[name]]

@@ -12,6 +12,10 @@
     "social": {
       "sha256": "58b62faa710da4acd5d87bc78fbf855a5787bc9dc2122d39b26ae4d18229d1d3",
       "block": "_socialInfluence() { this.object.resolve = Math.max(1, this.object.resolve + parseInt(this.object.opposedIntimacy) + parseInt(this.object.opposedVirtue) - parseInt(this.object.supportedIntimacy) - parseInt(this.object.supportedVirtue)); this.object.extraSuccesses = Math.max(0, this.object.diceRollTotal - this.object.resolve); let message = ''; if (this.object.diceRollTotal < this.object.resolve) { message = `<h4 class=\"dice-total\">${this.object.diceRollTotal} Successes vs ${this.object.resolve} Resolve</h4><h4 class=\"dice-total\">Influence Failed</h4>`; } else { let total = this.object.diceRollTotal - this.object.resolve; message = `<h4 class=\"dice-total\">${this.object.diceRollTotal} Successes vs ${this.object.resolve} Resolve</h4> <h4 class=\"dice-total\">${total} Extra Successes!</h4>`; } return message; } this.object.resolve = this.object.target.actor.system.resolve.value;"
+    },
+    "gambits": {
+      "sha256": "2ae3fbaf0b3b66ba99004fc8717507f2bc07cbdfeac9dd6903706c55ca8188af",
+      "block": "const gambitCosts = { '': 0, 'disarm': this.object.defense, 'distract': 2, 'ensnare': 3, 'knockback': 4, 'knockdown': 4, 'pilfer': 3, 'pull': 4, 'reveal_weakness': 3, 'unhorse': 5, }"
     }
   }
 }

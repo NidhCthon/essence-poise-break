@@ -25,6 +25,13 @@ standard rules and leaves both attack types available.
   - battle groups can't be withered at all, except inside a grapple.
   - Blocked buttons stay visible and say why on hover, so the rule teaches
     itself rather than hiding.
+- **Names the gambit.** The Gambit button opens a list of all nine gambits —
+  plus Grapple, once Combat Reforged turns it into one — each priced in Power
+  for the weapon in your hand, since a smashing weapon makes Knockdown cheaper
+  and a flexible one makes Ensnare cheaper. Picking one opens the system's
+  roller with that gambit already selected and the Power already wagered. A
+  gambit you can't use stays listed with the reason: Pull needs a weapon with
+  the pull tag, Disarm needs a target to price it against.
 - Tells you, when you are in Break, how much Poise you still need — Power you
   gain refills Poise before it reaches your pool.
 - For sorcerers, a **Sorcery** section: your current Will out of 10, every spell
@@ -107,15 +114,19 @@ and when Power or Poise changes.
 
 `targetNumbers()` mirrors the modifiers the system's roller applies to a target
 — prone, surprised, cover, concealment, grappling, wounds — because the panel
-has to predict a roll before the roller runs. Duplicated logic drifts, so three
-things watch for it:
+has to predict a roll before the roller runs. The gambit list duplicates the
+roller's cost table for the same reason — the panel opens the roller with a
+gambit already chosen, and the roller only recomputes the cost when the choice
+changes, so the panel's number is the one that gets spent. Duplicated logic
+drifts, so three things watch for it:
 
 - **The panel checks itself against each roll.** When you roll from a button
   here, it compares what it advised with what the roller actually computed and
   says so if they differ, naming both numbers. Purely diagnostic, and wrapped so
   a broken check can never break a roll.
 - **A weekly job watches the system's source.** `tools/check-roller.py` extracts
-  the roller's condition block and compares it with the fingerprint in
+  the roller's condition block, its Defense branch, its social block and its
+  gambit cost table, and compares each with the fingerprint in
   `.roller-watch.json`. A change upstream fails the run, so you hear about it
   before a session rather than during one.
 - **The verified system version is recorded.** The module notes which version it
@@ -130,6 +141,11 @@ disagreed; correct `targetNumbers()`, then re-record with
 
 - Only **equipped** weapons appear, since `weaponAttack` needs a weapon's uuid.
 - It reads the first token you target; multiple targets are ignored.
+- **Grapple's Power cost is the panel's own.** The system lists Grapple in its
+  gambit dropdown but has no cost for it, so choosing it there wagers nothing.
+  The panel fills that in — the higher of the target's Physique or Athletics,
+  or half an antagonist's primary pool — and says so on the row, because which
+  pool is the relevant one is the Storyteller's call.
 - `game.exaltedessence` is the system's macro API rather than a documented one.
   It is stable enough for hotbar macros, but a system update could rename it —
   in which case the buttons report the error rather than failing silently.
