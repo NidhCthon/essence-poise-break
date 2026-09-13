@@ -525,18 +525,37 @@ class TurnPanel extends ApplicationV2 {
     if (!spells.length && !rituals.length) return "";
 
     const will = actor.system?.will?.value ?? 0;
+    const controlRule = game.settings.get(MODULE_ID, "controlSpells");
+    // Being a control spell is a fact about this character, not about the
+    // spell, which is why the system keeps the flag on their own copy and a
+    // compendium spell can never carry it.
+    const costOf = (spell) => {
+      const printed = spell.system?.cost ?? 0;
+      const control = controlRule && spell.system?.iscontrolspell;
+      return { printed, cost: control ? Math.max(0, printed - 1) : printed,
+               control };
+    };
+
     const rows = spells
       .slice()
-      .sort((a, b) => (a.system?.cost ?? 0) - (b.system?.cost ?? 0))
+      .sort((a, b) => costOf(a).cost - costOf(b).cost)
       .map((spell) => {
-        const cost = spell.system?.cost ?? 0;
+        const { printed, cost, control } = costOf(spell);
         const afford = cost <= will;
+        const price = control
+          ? `<span class="epb-cost">${cost} Will <span class="epb-muted">(${printed} &minus; 1)</span></span>`
+          : `<span class="epb-cost">${cost} Will</span>`;
         return `<li class="epb-spell${afford ? "" : " epb-unaffordable"}">
-            <span>${esc(spell.name)}</span>
-            <span class="epb-cost">${cost} Will</span>
+            <span>${esc(spell.name)}${control ? " &starf;" : ""}</span>
+            ${price}
           </li>`;
       })
       .join("");
+
+    const controlNote = controlRule && spells.some((s) => s.system?.iscontrolspell)
+      ? " A control spell (&starf;) costs 1 less Will and may be improvised"
+        + " with, as though it were a Charm."
+      : "";
 
     return `
       <section class="epb-sorcery">
@@ -553,7 +572,7 @@ class TurnPanel extends ApplicationV2 {
         </div>
         <p class="epb-note">Casting drains Defense by 1 (first or second circle)
           or 2 (third), recovering 1 each turn. To reach a target who is not in
-          Break, spend 1 Will per point of their Poise.</p>
+          Break, spend 1 Will per point of their Poise.${controlNote}</p>
       </section>`;
   }
 
@@ -665,6 +684,17 @@ Hooks.once("init", () => {
     config: true,
     type: Boolean,
     default: true
+  });
+
+  game.settings.register(MODULE_ID, "controlSpells", {
+    name: "Control spells are in play",
+    hint: "An optional rule from the Storyteller's Guide: a sorcerer's control "
+      + "spell costs 1 less Will. Tick 'Is Control Spell' on the spell itself; "
+      + "the panel then shows the reduced cost. Off unless your table uses it.",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false
   });
 
   game.settings.register(MODULE_ID, "autoOpen", {
