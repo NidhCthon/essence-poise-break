@@ -436,7 +436,9 @@ function resolveMissingGambits(form) {
           object.newTargetData.effects.push(grappleEffect(target));
         }
         // Both sides of a grapple take the penalty, and the roller only ever
-        // updates the target, so the attacker is the panel's to handle.
+        // updates the target, so the attacker is the panel's to handle. Not
+        // awaited: this runs inside the roll, and the attacker's effect has to
+        // wait for the roll's own writes to land first.
         grappleTheAttacker(this.actor);
       }
     } catch (err) {
@@ -445,13 +447,67 @@ function resolveMissingGambits(form) {
   };
 }
 
-/** The grappler's own -1, on the actor the panel already owns. */
+/**
+ * Wait until the roller has finished writing to this actor.
+ *
+ * A gambit roll spends Power with `this.actor.update(actorData)`, where
+ * actorData is a duplicate of the whole actor taken before the roll - and the
+ * call is not awaited. Foundry rebuilds an embedded collection from exactly
+ * the array it is handed, so an effect created between the snapshot and that
+ * write is simply not in the array, and is dropped when it lands.
+ *
+ * Resolves on the actor's next update, or after a moment if none arrives -
+ * the Power spend is normally that update, but a gambit costing 0 Power
+ * changes nothing and so fires no hook.
+ */
+function afterActorSettles(actor, timeout = 1200) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      Hooks.off("updateActor", onUpdate);
+      resolve();
+    };
+    const onUpdate = (document) => {
+      // A tick later, so the write is committed rather than merely announced.
+      if (document?.id === actor?.id) setTimeout(finish, 0);
+    };
+    Hooks.on("updateActor", onUpdate);
+    setTimeout(finish, timeout);
+  });
+}
+
+/**
+ * The grappler's own -1, on the actor the panel already owns.
+ *
+ * Deliberately not created during _resolveGambit: see afterActorSettles(). The
+ * result is checked rather than assumed, because the failure mode this works
+ * around is silent - the effect is created successfully and then removed.
+ */
 async function grappleTheAttacker(actor) {
   try {
     if (!actor || alreadyGrappling(actor.effects)) return;
+    await afterActorSettles(actor);
+    if (alreadyGrappling(actor.effects)) return;
     await actor.createEmbeddedDocuments("ActiveEffect", [grappleEffect(actor)]);
+
+    // Confirm it survived. If the roller wrote again afterwards it will have
+    // taken the effect with it, and saying so beats a penalty that quietly
+    // is not there.
+    setTimeout(() => {
+      if (!alreadyGrappling(actor.effects)) {
+        console.warn(`${MODULE_ID} | the grappling effect on ${actor.name} was `
+          + "removed again after it was created - the roller wrote over it.");
+        // Plain text: a notification is not rendered as markup.
+        ui.notifications.warn(`Poise & Break: could not keep ${actor.name} in `
+          + "the grapple. Apply their −1 Defense by hand.");
+      }
+    }, 1500);
   } catch (err) {
     console.error(`${MODULE_ID} | could not grapple the attacker`, err);
+    ui.notifications.warn(`Poise & Break: could not apply ${actor?.name}'s own `
+      + "grapple penalty - see the console.");
   }
 }
 

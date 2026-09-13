@@ -112,6 +112,37 @@ cleared. If the system ever fixes the check to read `statuses`, the two would
 stack — `tools/check-roller.py` watches that exact block, so it would fail
 before a session rather than during one.
 
+## The grappler's own penalty was created, then deleted
+
+The first version applied the target's −1 correctly and the attacker's not at
+all, with nothing logged. Both were created; only one survived.
+
+`_abilityRoll()` spends the gambit's Power like this:
+
+    const actorData = foundry.utils.duplicate(this.actor);   // before the roll
+    ...
+    actorData.system.power.value = Math.max(0, ... - this.object.powerSpent);
+    this.actor.update(actorData);                            // not awaited
+    ...
+    this._resolveGambit(postDefenseTotal);                   // we run in here
+
+`actorData` is a duplicate of the *whole* actor, effects included, taken before
+the roll. And Foundry rebuilds an embedded collection from exactly the array it
+is handed — `EmbeddedCollectionField#_updateCommit` does `src.length = 0` and
+then commits only what was passed. So an effect created between the snapshot
+and that write is not in the array, and the write removes it.
+
+The target never had this problem: its effect goes *into* `newTargetData`,
+which is the array the system is about to write. The attacker's was created
+alongside it instead.
+
+The fix is to wait for the roller's own write before creating the effect —
+`afterActorSettles()` resolves on the actor's next update, falling back to a
+timeout, since a gambit costing 0 Power changes nothing and so fires no hook.
+The result is then checked rather than assumed: the failure mode here is a
+document that is created successfully and quietly removed, which no error
+handler would ever have caught.
+
 ## What is not covered
 
 - **Hero's Trick.** A gambit can be paid for at Step 5 out of the Power a

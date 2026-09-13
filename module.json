@@ -2,7 +2,7 @@
   "id": "essence-poise-break",
   "title": "Poise & Break \u2014 Turn Panel",
   "description": "A turn panel for Exalted: Essence. On your turn it reads your target's state and offers only the attacks that are legal against them \u2014 withering while they still have Poise, decisive once they are in Break \u2014 then opens the system's own roller. Built for the Combat Reforged rules from the Storyteller's Guide, and falls back to standard rules when that setting is off.",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "compatibility": {
     "minimum": "14",
     "verified": "14"
@@ -31,7 +31,7 @@
   },
   "url": "https://github.com/NidhCthon/essence-poise-break",
   "manifest": "https://github.com/NidhCthon/essence-poise-break/releases/latest/download/module.json",
-  "download": "https://github.com/NidhCthon/essence-poise-break/releases/download/v0.8.0/module.zip",
+  "download": "https://github.com/NidhCthon/essence-poise-break/releases/download/v0.8.1/module.zip",
   "readme": "https://github.com/NidhCthon/essence-poise-break#readme",
   "license": "https://github.com/NidhCthon/essence-poise-break/blob/main/LICENSE",
   "bugs": "https://github.com/NidhCthon/essence-poise-break/issues"
