@@ -143,6 +143,40 @@ The result is then checked rather than assumed: the failure mode here is a
 document that is created successfully and quietly removed, which no error
 handler would ever have caught.
 
+## Timed effects were never cleared, and counted from the wrong round
+
+Distract, Pull and Knockback leave a `Defense Penalty` for the rest of the
+round; Reveal Weakness cuts Soak for a set number of rounds. Two things were
+wrong with them.
+
+**Nothing removed them.** The system never mentions `end_of_round` again after
+creating one. Foundry 14 does expire effects, but
+`CONFIG.ActiveEffect.expiryAction` defaults to `"update"`: it sets
+`duration.expired` and leaves the effect on the token, so every gambit added
+another.
+
+**Foundry counted them from the wrong round.** The roller creates them inside a
+bulk `actor.update()`, and effects created that way skip
+`ActiveEffect#_preCreate` — which is where Foundry stamps `start`. The world data
+showed it directly: after a grapple in play, the target's Grappling effect was
+stored with `start: null`, while the attacker's, created normally, had
+`start.round: 2`. With no start, `_prepareDuration` falls back to the round the
+actor *joined combat*, so a one-round penalty applied in round 3 is overdue on
+arrival, and its default `turnStart` expiry can switch it off at the target's
+next turn — partway through the round it was meant to last.
+
+The panel now handles both. On `createActiveEffect`, the Storyteller's client
+fills in `start` the way Foundry would have, via `getEffectStart()`, so Foundry's
+own display and expiry count correctly too. On a forward round change it deletes
+the effects whose time is up, and when a combat ends it deletes them all. Only
+`end_of_round` and `reveal_weakness` are touched: the sheet's Defense Penalty
+button, Onslaught and Grappling are left alone.
+
+Round changes are read from `Combat#previous` in the `updateCombat` hook.
+Foundry's `combatRound` hook looks like the natural choice, but Foundry calls it
+from `Combat#nextRound`, which the system overrides without calling `super`, so
+it never fires in this system.
+
 ## What is not covered
 
 - **Hero's Trick.** A gambit can be paid for at Step 5 out of the Power a

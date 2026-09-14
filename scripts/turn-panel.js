@@ -10,11 +10,12 @@
  *   game.exaltedessence.weaponAttack(itemUuid, "withering" | "decisive" | "gambit")
  *   new game.exaltedessence.RollForm(actor, options, {}, { rollType }).render(true)
  *
- * The one exception is a gambit. Knockback and Grapple fall through the
- * system's own gambit resolution and apply nothing, so the panel supplies
- * their Defense penalty - and even then it pushes into the arrays the system
- * is about to read rather than writing to the target itself. See
- * resolveMissingGambits().
+ * The exceptions are all gambits. Knockback and Grapple fall through the
+ * system's own gambit resolution and apply nothing, so the panel supplies their
+ * Defense penalty - pushing into the arrays the system is about to read rather
+ * than writing to the target itself (resolveMissingGambits). And the timed
+ * effects gambits leave behind are cleared once their round is over, because
+ * nothing else ever removes them (sweepGambitEffects).
  *
  * Legality comes from the target's own token: the system registers "break" as
  * a status effect and clears it itself once Poise is restored, so reading that
@@ -509,6 +510,147 @@ async function grappleTheAttacker(actor) {
     ui.notifications.warn(`Poise & Break: could not apply ${actor?.name}'s own `
       + "grapple penalty - see the console.");
   }
+}
+
+/* -------------------------------------------- */
+/*  Clearing gambit effects once they are over  */
+/* -------------------------------------------- */
+
+/**
+ * The timed effects a gambit leaves behind.
+ *
+ * `end_of_round` is the Defense penalty from Distract and Pull, and from the
+ * panel's Knockback: the book gives all three "for the rest of the round".
+ * `reveal_weakness` cuts Soak for rounds equal to the extra successes.
+ *
+ * Nothing in the system removes either. Foundry 14 can expire an effect, but
+ * by default it only marks it expired - it stays on the token, and every
+ * gambit adds another.
+ *
+ * And Foundry counts their rounds wrongly. The roller creates them inside a
+ * bulk actor update, which skips the step where Foundry records when an effect
+ * started. With no start round, Foundry counts from the round the target
+ * joined combat, so a one-round penalty applied in round 3 is already overdue
+ * when it lands - and can be switched off at the target's next turn, while the
+ * rest of the round it was meant to last is still going.
+ */
+const TIMED_GAMBIT_EFFECTS = ["end_of_round", "reveal_weakness"];
+
+function timedGambitEffect(effect) {
+  const id = effect?.flags?.exaltedessence?.statusId;
+  return TIMED_GAMBIT_EFFECTS.includes(id) ? id : null;
+}
+
+/**
+ * Whether this client is the one that should write. Every client sees the same
+ * hooks, and without this each GM and player would try the same deletion.
+ */
+function isResponsibleGM() {
+  const gm = game.users?.activeGM;
+  return gm ? !!gm.isSelf : !!game.user?.isGM;
+}
+
+function clearingGambitEffects() {
+  try {
+    return !!game.settings.get(MODULE_ID, "clearGambitEffects");
+  } catch (err) {
+    return false;
+  }
+}
+
+/**
+ * Is this gambit effect finished once the combat reaches `round`?
+ *
+ * A rest-of-the-round penalty is over at the next round. Reveal Weakness lasts
+ * its own number of rounds, and never less than the rest of this one. An effect
+ * with no record of when it began is read as rest-of-the-round: the cautious
+ * reading, and the one that clears leftovers from before this existed.
+ */
+function gambitEffectOver(effect, round) {
+  if (!timedGambitEffect(effect)) return false;
+  if (effect.duration?.expired) return true;
+  const began = effect.start?.round;
+  if (!Number.isFinite(began)) return true;
+  const value = Number(effect.duration?.value);
+  const lasts = Math.max(1, Number.isFinite(value) ? value : 1);
+  return round - began >= lasts;
+}
+
+/**
+ * Record when a gambit effect began - the step the roller's bulk update skips.
+ *
+ * This is Foundry's own start data, filled in as it would have been had the
+ * effect been created normally, so Foundry's duration display and expiry stop
+ * counting from the wrong round too, not just this module's clean-up.
+ */
+async function stampGambitEffect(effect) {
+  if (!timedGambitEffect(effect) || effect.start) return;
+  if (!clearingGambitEffects() || !isResponsibleGM()) return;
+
+  const combat = game.combat;
+  const running = !!combat?.started;
+  const documentClass = CONFIG.ActiveEffect?.documentClass;
+  const start = typeof documentClass?.getEffectStart === "function"
+    ? documentClass.getEffectStart(combat)
+    : {
+        time: game.time?.worldTime ?? 0,
+        combat: running ? combat.id : null,
+        combatant: running ? combat.combatant?.id ?? null : null,
+        initiative: running ? combat.combatant?.initiative ?? null : null,
+        round: running ? combat.round : null,
+        turn: running ? combat.turn : null
+      };
+
+  try {
+    await effect.update({ start });
+  } catch (err) {
+    console.error(`${MODULE_ID} | could not record when ${effect.name} began`, err);
+  }
+}
+
+/**
+ * Delete the gambit effects whose time is up, for everyone in a combat.
+ *
+ * `ended` clears every one of them regardless of rounds left: an effect that
+ * lasts a round or three has no business outliving the fight it came from.
+ */
+async function sweepGambitEffects(combat, { ended = false } = {}) {
+  if (!combat || !clearingGambitEffects() || !isResponsibleGM()) return;
+
+  const round = combat.round ?? 0;
+  const seen = new Set();
+  for (const combatant of combat.combatants ?? []) {
+    const actor = combatant?.actor;
+    // An actor can sit on more than one combatant.
+    if (!actor || seen.has(actor.uuid)) continue;
+    seen.add(actor.uuid);
+
+    const ids = [];
+    for (const effect of actor.effects ?? []) {
+      if (!timedGambitEffect(effect)) continue;
+      if (ended || gambitEffectOver(effect, round)) ids.push(effect.id);
+    }
+    if (!ids.length) continue;
+
+    try {
+      await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
+    } catch (err) {
+      console.error(`${MODULE_ID} | could not clear finished gambit effects `
+        + `on ${actor.name}`, err);
+    }
+  }
+}
+
+/**
+ * A round change that moves forward - not a rewind, and not a turn change.
+ *
+ * Read from Combat#previous, which Foundry records before the updateCombat
+ * hook fires. The system's own nextRound() does not call super, so the
+ * combatRound hook Foundry would normally fire never does.
+ */
+function roundAdvanced(combat, changed) {
+  if (!changed || !("round" in changed)) return false;
+  return (changed.round ?? 0) > (combat?.previous?.round ?? 0);
 }
 
 /* -------------------------------------------- */
@@ -1128,6 +1270,19 @@ Hooks.once("init", () => {
     default: false
   });
 
+  game.settings.register(MODULE_ID, "clearGambitEffects", {
+    name: "Clear gambit effects when they run out",
+    hint: "Distract, Pull and Knockback lower Defense for the rest of the round; "
+      + "Reveal Weakness cuts Soak for a number of rounds. Nothing in the system "
+      + "removes them, and it records no start round, so Foundry can switch "
+      + "them off early. With this on, the Storyteller's client records when "
+      + "each began and deletes it once its time is up.",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
   game.settings.register(MODULE_ID, "autoOpen", {
     name: "Open automatically on your turn",
     hint: "Opens the panel when a combat turn reaches a character you control.",
@@ -1172,6 +1327,14 @@ Hooks.once("ready", () => {
 
   Hooks.on("deleteCombat", () => panel?.close());
 
+  // Gambit effects that last the rest of the round, or a few rounds: record
+  // when each began, since the roller does not, and clear each once it is over.
+  Hooks.on("createActiveEffect", (effect) => stampGambitEffect(effect));
+  Hooks.on("updateCombat", (combat, changed) => {
+    if (roundAdvanced(combat, changed)) sweepGambitEffects(combat);
+  });
+  Hooks.on("deleteCombat", (combat) => sweepGambitEffects(combat, { ended: true }));
+
   // Targeting, Break being toggled, and Power or Poise changing all alter what
   // the panel should be offering, so each one re-renders it.
   Hooks.on("targetToken", refreshPanel);
@@ -1185,3 +1348,21 @@ Hooks.once("ready", () => {
   Hooks.on("updateToken", refreshPanel);
   Hooks.on("updateItem", refreshPanel);
 });
+
+/* -------------------------------------------- */
+/*  For the tests                               */
+/* -------------------------------------------- */
+
+// Foundry loads this file as a module and ignores what it exports; the tests
+// in tests/ import it under a stubbed Foundry and need the pieces by name
+// rather than prised out of the source text.
+export {
+  MODULE_ID, SYSTEM_ID, VERIFIED_SYSTEM,
+  esc, legality, targetNumbers, socialNumbers,
+  GAMBITS, grappleCost, priceGambit,
+  SYSTEM_RESOLVES, PANEL_RESOLVES, grappleEffect, alreadyGrappling,
+  resolveMissingGambits, afterActorSettles, grappleTheAttacker,
+  TIMED_GAMBIT_EFFECTS, timedGambitEffect, gambitEffectOver, isResponsibleGM,
+  stampGambitEffect, sweepGambitEffects, roundAdvanced,
+  TurnPanel
+};

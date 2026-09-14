@@ -25,5 +25,5 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Compare the roller's condition block with what we mirror
+      - name: Compare the roller's watched blocks and version with what we mirror
         run: python tools/check-roller.py

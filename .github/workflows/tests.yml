@@ -1,0 +1,26 @@
+name: Tests
+
+# Runs the panel's shipped code against a stubbed Foundry: gambit pricing, the
+# effects it applies, the grapple race, the drift check, and clearing timed
+# gambit effects. Each of these was a real bug before it was a test.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: The module parses
+        run: node --check scripts/turn-panel.js
+
+      - name: Run the tests
+        run: node --test tests/*.test.mjs

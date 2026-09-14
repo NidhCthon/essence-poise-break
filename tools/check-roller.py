@@ -15,7 +15,9 @@ That duplication is deliberate, but it means the module can fall out of step
 when the system changes.
 
 This extracts that block from the system's source and compares it with a
-fingerprint committed alongside. Run it on a schedule and a change upstream
+fingerprint committed alongside. It also compares the system's released version
+with VERIFIED_SYSTEM in the panel, so a new release is looked at even when none
+of the watched blocks moved. Run it on a schedule and a change upstream
 becomes an email, rather than a player noticing the advice is a point out.
 
     python tools/check-roller.py            # check, exit 1 on a change
@@ -34,6 +36,10 @@ from pathlib import Path
 SOURCE = ("https://raw.githubusercontent.com/Aliharu/Foundry-ExEss/master/"
           "module/apps/dice-roller.js")
 BASELINE = Path(__file__).resolve().parent.parent / ".roller-watch.json"
+SYSTEM_JSON = ("https://raw.githubusercontent.com/Aliharu/Foundry-ExEss/master/"
+               "system.json")
+PANEL = Path(__file__).resolve().parent.parent / "scripts" / "turn-panel.js"
+VERIFIED = re.compile(r'const VERIFIED_SYSTEM = "([^"]+)"')
 
 # Where the roller inspects the target's conditions.
 ANCHOR = "if (this.object.target.actor.effects) {"
@@ -126,6 +132,20 @@ def extract(source):
     return blocks
 
 
+def check_version():
+    """A message if upstream has moved past the version the panel records."""
+    match = VERIFIED.search(PANEL.read_text(encoding="utf-8"))
+    if not match:
+        return "FAIL: VERIFIED_SYSTEM is missing from scripts/turn-panel.js."
+    upstream = json.loads(fetch(SYSTEM_JSON)).get("version")
+    if upstream == match.group(1):
+        return None
+    return ("CHANGED: the system is at {} upstream; the panel was verified "
+            "against {}.\nIf the watched blocks are unchanged, read the release "
+            "notes, then bump VERIFIED_SYSTEM in scripts/turn-panel.js."
+            .format(upstream, match.group(1)))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--update", action="store_true",
@@ -171,9 +191,13 @@ def main():
     changed = [name for name in blocks
                if expected["blocks"].get(name, {}).get("sha256")
                != digests[name]]
+    version = check_version()
     if not changed:
         print("unchanged ({})".format(
             " ".join("{} {}".format(n, digests[n][:8]) for n in sorted(blocks))))
+        if version:
+            print(version)
+            return 1
         return 0
 
     for name in changed:
@@ -186,6 +210,8 @@ def main():
         print("Check {}, update it if the rule moved, then re-record with "
               "--update.".format(what.get(name, "the panel")))
         print()
+    if version:
+        print(version)
     return 1
 
 
