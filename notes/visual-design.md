@@ -91,3 +91,16 @@ it was checked in, in case they come up again:
 - It barely advances animation time, so a mid-animation frame can look like the
   finished state is wrong. `document.getAnimations().forEach(a => a.finish())`
   shows the true end state.
+
+The preview has no tokens, so it could not show the worst bug the BREAK text
+shipped with. The effect was added to the interface group at zIndex 0, below the
+token layer (200), and each token draws a void mesh that erases interface
+content beneath it inside its outline. The word, sitting inside the token,
+vanished; the shards had been cut off at the token's edge all along. It showed
+up only on the live canvas, by drawing the same word three ways side by side.
+The effect now sits at Foundry's floating-text level, and
+`tests/break-layer.test.mjs` pins it there.
+
+A background Chrome tab also freezes the canvas clock entirely, so an effect
+started in one never finishes. That is not a bug in the effect, but it will
+look like one when testing from a tab that isn't in front.

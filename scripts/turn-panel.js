@@ -1017,6 +1017,12 @@ async function playBreakEffect(token) {
   } catch (err) {
     console.warn(`${MODULE_ID} | could not draw the BREAK text`, err);
   }
+  // Above the token layer. The interface group sorts its children by zIndex,
+  // and each token draws a void mesh that erases interface content beneath it
+  // inside the token's outline. At the default of 0 that hid the word entirely
+  // and cut the shards off at the token's edge. Foundry's own floating text sits
+  // at this level for the same reason.
+  container.zIndex = CONFIG.Canvas?.groups?.interface?.zIndexScrollingText ?? 1100;
   board.interface.addChild(container);
 
   // Photosensitive mode gets the ring alone, slower and fainter: no burst of
