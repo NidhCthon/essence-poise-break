@@ -1,18 +1,47 @@
 /* Poise & Break — Turn Panel
-   Jade for withering and standing, orichalcum for Power and decisive attacks,
-   a break red for Break: the same colour meanings as the player guide. */
+
+   The colours carry the rules, and match the player guide exactly: jade for
+   Poise and withering attacks, orichalcum for Power and decisive ones, break
+   red for Break. Foundry's interface is dark by default, so the dark values are
+   the base and the guide's light values take over under a light theme.
+
+   One signature: Poise drawn as jade shards that crack in Break. Everything
+   else stays quiet so that reads first. */
 
 .essence-poise-break {
-  --epb-jade: #2e8f6d;
-  --epb-gold: #c98b24;
-  --epb-break: #c2453a;
-  --epb-line: rgba(128, 140, 134, 0.35);
-  --epb-muted: rgba(128, 140, 134, 1);
+  --epb-jade: #63C7A0;
+  --epb-jade-deep: #2A8A68;
+  --epb-jade-soft: rgba(99, 199, 160, 0.13);
+  --epb-gold: #E5B356;
+  --epb-gold-soft: rgba(229, 179, 86, 0.13);
+  --epb-break: #EE7163;
+  --epb-break-soft: rgba(238, 113, 99, 0.15);
+  --epb-muted: #A2AFA8;
+  --epb-rule: rgba(162, 175, 168, 0.22);
+  --epb-surface: rgba(99, 199, 160, 0.045);
+  --epb-shard-empty: rgba(162, 175, 168, 0.26);
+  --epb-display: "Modesto Condensed", "Signika", sans-serif;
+}
+
+.essence-poise-break.theme-light,
+.theme-light .essence-poise-break:not(.theme-dark) {
+  --epb-jade: #1E6B53;
+  --epb-jade-deep: #154A3A;
+  --epb-jade-soft: rgba(30, 107, 83, 0.10);
+  --epb-gold: #8B5B10;
+  --epb-gold-soft: rgba(201, 139, 36, 0.14);
+  --epb-break: #A53028;
+  --epb-break-soft: rgba(165, 48, 40, 0.10);
+  --epb-muted: #55625C;
+  --epb-rule: rgba(85, 98, 92, 0.25);
+  --epb-surface: rgba(30, 107, 83, 0.045);
+  --epb-shard-empty: rgba(85, 98, 92, 0.28);
 }
 
 .essence-poise-break .window-content {
   display: grid;
-  gap: 12px;
+  align-content: start;
+  gap: 14px;
   padding: 12px 14px 14px;
   font-size: 13px;
   line-height: 1.45;
@@ -23,44 +52,16 @@
   gap: 6px;
 }
 
-.essence-poise-break .epb-label {
-  margin: 0;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--epb-muted);
-}
-
 .essence-poise-break p {
   margin: 0;
 }
 
-.essence-poise-break h3 {
-  margin: 0;
-  font-size: 16px;
-  line-height: 1.2;
-  border: none;
-}
-
-/* ---- your own state ---- */
-
-.essence-poise-break .epb-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.essence-poise-break .epb-stat {
-  border: 1px solid var(--epb-line);
-  border-radius: 4px;
-  padding: 3px 7px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.essence-poise-break .epb-stat b {
-  color: var(--epb-gold);
+.essence-poise-break .epb-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--epb-muted);
 }
 
 .essence-poise-break .epb-note {
@@ -72,42 +73,343 @@
   color: var(--epb-break);
 }
 
-/* ---- the target ---- */
+.essence-poise-break .epb-muted {
+  color: var(--epb-muted);
+  font-weight: 400;
+}
 
-.essence-poise-break .epb-target {
-  border-top: 1px solid var(--epb-line);
-  padding-top: 10px;
+/* ---- you ---- */
+
+.essence-poise-break .epb-self-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.essence-poise-break h3 {
+  margin: 0;
+  border: none;
+  font-family: var(--epb-display);
+  font-size: 21px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.essence-poise-break .epb-guard {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.essence-poise-break .epb-guard-num,
+.essence-poise-break .epb-poise-num {
+  font-size: 12px;
+  color: var(--epb-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.essence-poise-break .epb-guard-num b,
+.essence-poise-break .epb-poise-num b {
+  font-size: 14px;
+  color: var(--epb-jade);
+}
+
+.essence-poise-break .epb-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.essence-poise-break .epb-stat {
+  color: var(--epb-muted);
+  white-space: nowrap;
+}
+
+.essence-poise-break .epb-stat b {
+  font-size: 14px;
+  color: var(--color-text-primary, inherit);
+}
+
+.essence-poise-break .epb-stat-power b {
+  color: var(--epb-gold);
+}
+
+/* ---- Poise as shards: the one thing this panel is remembered by ---- */
+
+.essence-poise-break .epb-poise {
+  --epb-shard-w: 10px;
+  --epb-shard-h: 20px;
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  flex: none;
+}
+
+.essence-poise-break .epb-poise.is-small {
+  --epb-shard-w: 7px;
+  --epb-shard-h: 14px;
+  gap: 2px;
+}
+
+.essence-poise-break .epb-shard {
+  position: relative;
+  flex: none;
+  width: var(--epb-shard-w);
+  height: var(--epb-shard-h);
+}
+
+/* Uneven heights and tilts, so a row reads as broken-off crystal rather than a
+   progress bar. */
+.essence-poise-break .epb-shard:nth-child(3n + 1) { transform: rotate(-3deg); }
+.essence-poise-break .epb-shard:nth-child(3n + 2) { height: calc(var(--epb-shard-h) * 0.86); transform: rotate(4deg); }
+.essence-poise-break .epb-shard:nth-child(3n) { height: calc(var(--epb-shard-h) * 0.94); transform: rotate(-1deg); }
+
+.essence-poise-break .epb-shard::before,
+.essence-poise-break .epb-shard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+/* A cut crystal: a point, two shoulders, a narrower base. */
+.essence-poise-break .epb-shard::before {
+  clip-path: polygon(50% 0, 100% 32%, 80% 100%, 20% 100%, 0 32%);
+  background: var(--epb-shard-empty);
+}
+
+.essence-poise-break .epb-shard.is-full::before {
+  background:
+    linear-gradient(105deg, rgba(255, 255, 255, 0.42) 0 40%, rgba(255, 255, 255, 0) 40%),
+    linear-gradient(180deg, var(--epb-jade), var(--epb-jade-deep));
+}
+
+/* In Break every shard splits along a jagged crack and turns red. */
+.essence-poise-break .epb-poise.is-broken .epb-shard::before,
+.essence-poise-break .epb-poise.is-broken .epb-shard::after {
+  background: linear-gradient(180deg, var(--epb-break), color-mix(in srgb, var(--epb-break) 45%, transparent));
+}
+
+.essence-poise-break .epb-poise.is-broken .epb-shard::before {
+  clip-path: polygon(50% 0, 100% 32%, 80% 100%, 54% 100%, 60% 52%, 42% 30%);
+  transform: translate(1.5px, -1px) rotate(8deg);
+}
+
+.essence-poise-break .epb-poise.is-broken .epb-shard::after {
+  clip-path: polygon(50% 0, 42% 30%, 60% 52%, 54% 100%, 20% 100%, 0 32%);
+  transform: translate(-1.5px, 1px) rotate(-7deg);
+}
+
+/* ---- the face-off: who you are fighting, and what to do about it ---- */
+
+.essence-poise-break .epb-faceoff {
+  --epb-edge: var(--epb-jade);
+  --epb-edge-soft: var(--epb-jade-soft);
+  position: relative;
+  display: grid;
+  gap: 12px;
+  padding: 11px 12px 12px 15px;
+  border: 1px solid color-mix(in srgb, var(--epb-edge) 32%, transparent);
+  border-radius: 6px;
+  background:
+    linear-gradient(140deg, var(--epb-edge-soft), transparent 65%),
+    var(--epb-surface);
+  overflow: hidden;
+}
+
+.essence-poise-break .epb-faceoff[data-state="break"] {
+  --epb-edge: var(--epb-break);
+  --epb-edge-soft: var(--epb-break-soft);
+}
+
+.essence-poise-break .epb-faceoff[data-state="group"],
+.essence-poise-break .epb-faceoff[data-state="standard"] {
+  --epb-edge: var(--epb-gold);
+  --epb-edge-soft: var(--epb-gold-soft);
+}
+
+.essence-poise-break .epb-faceoff[data-state="none"] {
+  --epb-edge: var(--epb-muted);
+  --epb-edge-soft: transparent;
+}
+
+/* The target's state, as a bar down the card's edge. */
+.essence-poise-break .epb-faceoff::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--epb-edge);
+}
+
+.essence-poise-break .epb-target-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .essence-poise-break .epb-target-name {
-  font-weight: 700;
+  min-width: 0;
+  font-family: var(--epb-display);
+  font-size: 19px;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+}
+
+.essence-poise-break .epb-target-poise {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.essence-poise-break .epb-faceoff[data-state="break"] .epb-poise-num b {
+  color: var(--epb-break);
 }
 
 .essence-poise-break .epb-chip {
   display: inline-block;
+  padding: 1px 8px;
+  border: 1px solid color-mix(in srgb, var(--epb-edge) 45%, transparent);
   border-radius: 999px;
-  padding: 2px 9px;
-  font-size: 11px;
+  background: var(--epb-edge-soft);
+  color: var(--epb-edge);
+  font-size: 10.5px;
   font-weight: 700;
-  border: 1px solid currentColor;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.essence-poise-break .epb-chip-standing { color: var(--epb-jade); }
-.essence-poise-break .epb-chip-break { color: var(--epb-break); }
-.essence-poise-break .epb-chip-group,
-.essence-poise-break .epb-chip-standard { color: var(--epb-gold); }
+/* The verdict names the move in the move's own colour: jade to wither,
+   orichalcum to strike decisively. */
+.essence-poise-break .epb-verdict {
+  --epb-state: var(--epb-jade);
+  gap: 5px;
+}
+
+.essence-poise-break .epb-verdict[data-state="break"],
+.essence-poise-break .epb-verdict[data-state="group"] {
+  --epb-state: var(--epb-gold);
+}
+
+.essence-poise-break .epb-verdict[data-state="none"],
+.essence-poise-break .epb-verdict[data-state="standard"] {
+  --epb-state: var(--color-text-primary, inherit);
+}
+
+.essence-poise-break .epb-headline {
+  font-family: var(--epb-display);
+  font-size: 27px;
+  line-height: 0.95;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--epb-state);
+}
+
+.essence-poise-break .epb-sums b {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--epb-state);
+}
+
+/* The arithmetic behind the verdict, so a disagreement with the roller is
+   visible rather than mysterious. */
+.essence-poise-break .epb-working {
+  font-size: 11px;
+  color: var(--epb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The rule behind the call. Quiet, because you stop reading it once you know
+   the system, and it can be switched off. */
+.essence-poise-break .epb-rule {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--epb-muted);
+}
+
+.essence-poise-break .epb-prompt {
+  padding-left: 9px;
+  border-left: 2px solid var(--epb-state, var(--epb-rule));
+  font-size: 12px;
+}
+
+/* ---- the moment a target Breaks ---- */
+
+.essence-poise-break .epb-faceoff::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 85% 15%, color-mix(in srgb, var(--epb-break) 34%, transparent), transparent 70%);
+}
+
+.essence-poise-break .epb-faceoff[data-just-broke="true"]::after {
+  animation: epb-faceoff-flash 900ms ease-out both;
+}
+
+.essence-poise-break [data-just-broke="true"] .epb-poise.is-broken .epb-shard::before {
+  animation:
+    epb-split-right 620ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--epb-i, 0) * 50ms) both,
+    epb-crack-flash 620ms ease-out calc(var(--epb-i, 0) * 50ms) both;
+}
+
+.essence-poise-break [data-just-broke="true"] .epb-poise.is-broken .epb-shard::after {
+  animation:
+    epb-split-left 620ms cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--epb-i, 0) * 50ms) both,
+    epb-crack-flash 620ms ease-out calc(var(--epb-i, 0) * 50ms) both;
+}
+
+@keyframes epb-faceoff-flash {
+  0% { opacity: 0; }
+  18% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes epb-split-right {
+  0% { transform: none; }
+  30% { transform: translate(0.5px, 0) rotate(2deg); }
+  100% { transform: translate(1.5px, -1px) rotate(8deg); }
+}
+
+@keyframes epb-split-left {
+  0% { transform: none; }
+  30% { transform: translate(-0.5px, 0) rotate(-2deg); }
+  100% { transform: translate(-1.5px, 1px) rotate(-7deg); }
+}
+
+@keyframes epb-crack-flash {
+  0% { filter: brightness(2.4) saturate(0); }
+  100% { filter: none; }
+}
+
+/* Foundry's photosensitive mode and the system's reduced-motion setting both
+   get the finished state straight away. */
+.essence-poise-break .epb-faceoff[data-gentle="true"]::after,
+.essence-poise-break .epb-faceoff[data-gentle="true"] .epb-shard::before,
+.essence-poise-break .epb-faceoff[data-gentle="true"] .epb-shard::after {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .essence-poise-break .epb-faceoff::after,
+  .essence-poise-break .epb-shard::before,
+  .essence-poise-break .epb-shard::after {
+    animation: none !important;
+  }
+}
 
 /* ---- attacks ---- */
 
-.essence-poise-break .epb-attacks,
-.essence-poise-break .epb-other {
-  border-top: 1px solid var(--epb-line);
-  padding-top: 10px;
-}
-
 .essence-poise-break .epb-weapon {
   display: grid;
-  gap: 5px;
+  gap: 6px;
 }
 
 .essence-poise-break .epb-weapon + .epb-weapon {
@@ -115,16 +417,16 @@
 }
 
 .essence-poise-break .epb-weapon-name {
-  font-weight: 700;
   display: flex;
   justify-content: space-between;
-  gap: 8px;
   align-items: baseline;
+  gap: 8px;
+  font-weight: 700;
 }
 
 .essence-poise-break .epb-over {
-  font-weight: 400;
   font-size: 11px;
+  font-weight: 400;
   color: var(--epb-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -139,30 +441,53 @@
   flex: 1 1 auto;
   min-width: 84px;
   width: auto;
+  height: auto;
+  min-height: 28px;
   padding: 5px 8px;
-  font-size: 12px;
-  line-height: 1.3;
-  border: 1px solid var(--epb-line);
+  border: 1px solid var(--epb-rule);
   border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
   cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
 }
 
+.essence-poise-break .epb-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.essence-poise-break .epb-btn:focus-visible,
+.essence-poise-break .epb-gambit-pick:focus-visible {
+  outline: 2px solid var(--epb-jade);
+  outline-offset: 1px;
+}
+
+/* A blocked attack stays in place, dashed, and says why on hover. It has to
+   stay legible as a button, or "why can't I" never gets asked. */
 .essence-poise-break .epb-btn:disabled {
-  opacity: 0.4;
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--epb-muted) 55%, transparent);
+  color: var(--epb-muted);
+  font-weight: 400;
+  opacity: 0.75;
   cursor: not-allowed;
 }
 
-/* A legal attack is named in its own colour; a blocked one greys out and
-   explains itself on hover. */
 .essence-poise-break .epb-btn.epb-withering:not(:disabled) {
+  border-color: color-mix(in srgb, var(--epb-jade) 60%, transparent);
+  background: var(--epb-jade-soft);
   color: var(--epb-jade);
-  border-color: var(--epb-jade);
 }
 
 .essence-poise-break .epb-btn.epb-decisive:not(:disabled),
 .essence-poise-break .epb-btn.epb-gambit:not(:disabled) {
+  border-color: color-mix(in srgb, var(--epb-gold) 60%, transparent);
+  background: var(--epb-gold-soft);
   color: var(--epb-gold);
-  border-color: var(--epb-gold);
 }
 
 /* ---- the gambit list ---- */
@@ -170,13 +495,13 @@
 /* Indented under the weapon whose tags priced it, because the same gambit can
    cost different Power with a different weapon in hand. */
 .essence-poise-break .epb-gambits {
-  list-style: none;
-  margin: 2px 0 4px;
-  padding: 0 0 0 8px;
-  border-left: 2px solid var(--epb-line);
   display: grid;
   gap: 6px;
   max-height: 240px;
+  margin: 2px 0 4px;
+  padding: 0 0 0 9px;
+  border-left: 2px solid color-mix(in srgb, var(--epb-gold) 45%, transparent);
+  list-style: none;
   overflow-y: auto;
 }
 
@@ -192,18 +517,21 @@
   align-items: baseline;
   gap: 10px;
   width: 100%;
-  padding: 2px 4px;
-  background: none;
+  height: auto;
+  padding: 3px 5px;
   border: 1px solid transparent;
   border-radius: 3px;
-  text-align: left;
+  background: none;
+  color: inherit;
   font-size: 12px;
   line-height: 1.3;
+  text-align: left;
   cursor: pointer;
 }
 
 .essence-poise-break .epb-gambit-pick:hover {
-  border-color: var(--epb-gold);
+  border-color: color-mix(in srgb, var(--epb-gold) 55%, transparent);
+  background: var(--epb-gold-soft);
 }
 
 .essence-poise-break .epb-gambit-name {
@@ -211,7 +539,7 @@
 }
 
 .essence-poise-break .epb-gambit-why {
-  padding: 0 4px;
+  padding: 0 5px;
   font-size: 11px;
   line-height: 1.35;
   color: var(--epb-muted);
@@ -219,45 +547,23 @@
 
 /* Listed, not hidden: a gambit you cannot use still has to say why. */
 .essence-poise-break .epb-gambit-row.epb-blocked {
+  padding: 2px 5px;
   opacity: 0.5;
-  padding: 2px 4px;
 }
 
 .essence-poise-break .epb-gambit-row.epb-blocked .epb-gambit-name {
   font-weight: 400;
 }
 
-.essence-poise-break .epb-footer {
-  border-top: 1px solid var(--epb-line);
-  padding-top: 8px;
-  font-size: 11px;
-  color: var(--epb-muted);
-}
-
 /* ---- sorcery ---- */
 
-.essence-poise-break .epb-sorcery {
-  border-top: 1px solid var(--epb-line);
-  padding-top: 10px;
-}
-
-.essence-poise-break .epb-muted {
-  color: var(--epb-muted);
-  font-weight: 400;
-}
-
-.essence-poise-break .epb-social {
-  border-top: 1px solid var(--epb-line);
-  padding-top: 10px;
-}
-
 .essence-poise-break .epb-spells {
-  list-style: none;
-  margin: 2px 0 2px;
-  padding: 0;
   display: grid;
   gap: 3px;
   max-height: 132px;
+  margin: 2px 0;
+  padding: 0;
+  list-style: none;
   overflow-y: auto;
 }
 
@@ -280,55 +586,11 @@
   opacity: 0.45;
 }
 
-/* ---- the verdict: what to do, and why ---- */
+/* ---- footer ---- */
 
-.essence-poise-break .epb-verdict {
-  --epb-state: var(--epb-jade);
-  border-top: 1px solid var(--epb-line);
-  border-bottom: 1px solid var(--epb-line);
-  padding: 10px 0;
-  gap: 4px;
-}
-
-.essence-poise-break .epb-verdict[data-state="break"],
-.essence-poise-break .epb-verdict[data-state="group"] { --epb-state: var(--epb-gold); }
-.essence-poise-break .epb-verdict[data-state="none"] { --epb-state: var(--epb-muted); }
-
-.essence-poise-break .epb-headline {
-  font-size: 17px;
-  font-weight: 700;
-  color: var(--epb-state);
-  line-height: 1.2;
-}
-
-.essence-poise-break .epb-sums {
-  font-size: 13px;
-}
-
-.essence-poise-break .epb-sums b {
-  font-variant-numeric: tabular-nums;
-  color: var(--epb-state);
-}
-
-/* The rule behind the call. Muted, because you stop reading it once you know
-   the system - and it can be switched off entirely in settings. */
-.essence-poise-break .epb-rule {
-  font-size: 12px;
-  font-style: italic;
-  color: var(--epb-muted);
-}
-
-.essence-poise-break .epb-prompt {
-  font-size: 12px;
-  color: var(--epb-break);
-  padding-left: 10px;
-  border-left: 2px solid var(--epb-break);
-}
-
-/* The arithmetic behind the verdict, so a disagreement with the roller is
-   visible rather than mysterious. */
-.essence-poise-break .epb-working {
+.essence-poise-break .epb-footer {
+  padding-top: 8px;
+  border-top: 1px solid var(--epb-rule);
   font-size: 11px;
   color: var(--epb-muted);
-  font-variant-numeric: tabular-nums;
 }

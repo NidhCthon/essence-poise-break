@@ -1,2 +1,6 @@
 node_modules/
 *.zip
+
+# Foundry's own stylesheet and fonts, copied from a licensed install so the
+# preview page looks like the real thing. Never commit them.
+tools/preview/.foundry/

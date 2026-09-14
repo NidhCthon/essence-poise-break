@@ -654,6 +654,250 @@ function roundAdvanced(combat, changed) {
 }
 
 /* -------------------------------------------- */
+/*  Poise as shards, and the Break effect       */
+/* -------------------------------------------- */
+
+/** Past this many, shards stop reading as a count; the number carries it. */
+const MAX_SHARDS = 10;
+
+/**
+ * Poise as a row of jade shards: full for the Poise left, faint for what has
+ * been worn away, and every one of them cracked in Break. The number is always
+ * printed beside it as well - the shards are for a glance, not for counting.
+ */
+function poiseShards(value, max, { broken = false, small = false } = {}) {
+  const current = Math.max(0, Number(value) || 0);
+  const top = Math.max(Number(max) || 0, current);
+  const drawn = Math.min(MAX_SHARDS, top);
+  if (!drawn) return "";
+
+  const filled = broken ? 0 : Math.min(drawn, current);
+  const shards = Array.from({ length: drawn }, (_, i) =>
+    `<span class="epb-shard${i < filled ? " is-full" : ""}" style="--epb-i:${i}"></span>`
+  ).join("");
+  const label = broken ? `In Break, Poise 0 of ${top}` : `Poise ${current} of ${top}`;
+  const classes = ["epb-poise", broken && "is-broken", small && "is-small"]
+    .filter(Boolean).join(" ");
+  return `<span class="${classes}" role="img" aria-label="${label}">${shards}</span>`;
+}
+
+/** Foundry's photosensitive mode, which every animation here follows. */
+function photosensitive() {
+  try {
+    return !!game.settings.get("core", "photosensitiveMode");
+  } catch (err) {
+    return false;
+  }
+}
+
+/**
+ * The Break effect: the moment a token Breaks, its Poise shatters off it.
+ *
+ * Purely visual, and local to each client - nothing is written to any
+ * document. Every client sees the Break status arrive through
+ * createActiveEffect and draws its own copy, so it plays however Break was
+ * applied, not only for rolls made from this panel.
+ */
+const BREAK_COLORS = { jade: 0x63C7A0, break: 0xEE7163 };
+const BREAK_SHARDS = 14;
+const BREAK_DURATION = 950;
+
+function isBreakEffect(effect) {
+  const statuses = effect?.statuses;
+  return !!(statuses?.has ? statuses.has("break")
+    : Array.isArray(statuses) && statuses.includes("break"));
+}
+
+function showingBreakEffect() {
+  try {
+    return !!game.settings.get(MODULE_ID, "breakEffect");
+  } catch (err) {
+    return false;
+  }
+}
+
+/**
+ * The tokens that should shatter for this effect, on this client.
+ *
+ * Token#isVisible is the gate that matters. It is false for a token hidden
+ * from players and for one outside this player's vision, and a shatter drawn
+ * there would give away where it is.
+ */
+function breakEffectTokens(effect) {
+  if (!isBreakEffect(effect) || !showingBreakEffect()) return [];
+  const actor = effect.parent;
+  if (typeof actor?.getActiveTokens !== "function") return [];
+  return actor.getActiveTokens().filter((token) => token?.isVisible && !token.destroyed);
+}
+
+/** A stable number from a token id, so a token shatters the same way each time. */
+function seedFor(id) {
+  let hash = 2166136261;
+  for (const char of String(id ?? "")) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+/** A small seedable generator; plenty random for scattering shards. */
+function seededRandom(seed) {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6D2B79F5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Where the shards sit around a token, in fractions of its radius. Spread
+ * evenly with a little jitter, so it reads as one crystal coming apart rather
+ * than confetti.
+ */
+function shardLayout(count, seed) {
+  const random = seededRandom(seed);
+  return Array.from({ length: count }, (_, i) => ({
+    angle: (i / count) * Math.PI * 2 + (random() - 0.5) * 0.35,
+    length: 0.24 + random() * 0.16,
+    width: 0.10 + random() * 0.06,
+    spin: (random() - 0.5) * 2.4,
+    drift: 0.55 + random() * 0.6
+  }));
+}
+
+/** The shatter at progress t, from 0 to 1. */
+function shatterFrame(t) {
+  const p = Math.min(1, Math.max(0, Number(t) || 0));
+  const burst = 1 - (1 - p) ** 3;
+  return {
+    burst,
+    // Whole for a beat, then gone.
+    alpha: p < 0.55 ? 1 : Math.max(0, (1 - p) / 0.45),
+    // Jade turns red early, so the colour change is the first thing you see.
+    tint: Math.min(1, p / 0.35),
+    ringScale: 1 + 0.6 * burst,
+    // The ring arrives with the crack rather than before it: nothing on the
+    // first frame, strongest a fifth of the way in, gone by the end.
+    ringAlpha: 0.85 * (p < 0.2 ? p / 0.2 : (1 - p) / 0.8)
+  };
+}
+
+/** The light a shard passes through as it cracks. */
+const CRACK_LIGHT = 0xFFF4E6;
+
+/**
+ * A shard's colour as it cracks: jade, to a flash of light, to break red. A
+ * straight blend from jade to red passes through a dull grey-brown halfway,
+ * which reads as the effect going muddy rather than breaking.
+ */
+function shardColor(tint, from, to) {
+  return tint < 0.5
+    ? mixColor(from, CRACK_LIGHT, tint * 2)
+    : mixColor(CRACK_LIGHT, to, (tint - 0.5) * 2);
+}
+
+/** Blend two 0xRRGGBB colours, channel by channel. */
+function mixColor(from, to, amount) {
+  const a = Math.min(1, Math.max(0, amount));
+  const channel = (shift) => {
+    const x = (from >> shift) & 0xff;
+    const y = (to >> shift) & 0xff;
+    return Math.round(x + (y - x) * a);
+  };
+  return (channel(16) << 16) | (channel(8) << 8) | channel(0);
+}
+
+/**
+ * One frame of the shatter, drawn into a PIXI.Graphics with the PIXI 7 API
+ * that Foundry 14 bundles. Kept apart from the canvas so the geometry can be
+ * tested, and previewed, on its own.
+ */
+function drawShatter(graphics, layout, frame, radius, from, to) {
+  graphics.clear();
+  if (frame.ringAlpha > 0) {
+    graphics.lineStyle(1 + radius * 0.06 * (1 - frame.burst), to, frame.ringAlpha);
+    graphics.drawCircle(0, 0, radius * frame.ringScale);
+    graphics.lineStyle(0);
+  }
+  const color = shardColor(frame.tint, from, to);
+  for (const shard of layout) {
+    const distance = radius * (0.95 + shard.drift * frame.burst);
+    const cx = Math.cos(shard.angle) * distance;
+    const cy = Math.sin(shard.angle) * distance;
+    const turn = shard.angle + shard.spin * frame.burst;
+    const cos = Math.cos(turn);
+    const sin = Math.sin(turn);
+    const long = radius * shard.length;
+    const wide = radius * shard.width;
+    const points = [[long, 0], [0, wide / 2], [-long * 0.35, 0], [0, -wide / 2]]
+      .flatMap(([x, y]) => [cx + x * cos - y * sin, cy + x * sin + y * cos]);
+    graphics.beginFill(color, frame.alpha);
+    graphics.drawPolygon(points);
+    graphics.endFill();
+  }
+}
+
+/**
+ * Play the shatter on one token. The drawing lives in the interface canvas
+ * group, above the tokens, and is destroyed when the animation ends - or found
+ * already destroyed, if the canvas was torn down around it.
+ */
+async function playBreakEffect(token) {
+  const pixi = globalThis.PIXI;
+  const board = globalThis.canvas;
+  const CanvasAnimation = foundry.canvas?.animation?.CanvasAnimation;
+  if (!pixi || !board?.interface || !CanvasAnimation || !token?.center) return;
+
+  const radius = Math.max(token.w ?? 0, token.h ?? 0) / 2;
+  if (!radius) return;
+  const gentle = board.photosensitiveMode === true || photosensitive();
+
+  // A token with a dynamic ring flashes it red as well. Foundry softens that
+  // flash itself in photosensitive mode.
+  if (token.hasDynamicRing && token.ring?.flashColor && foundry.utils?.Color) {
+    token.ring.flashColor(foundry.utils.Color.from(BREAK_COLORS.break), { duration: 1600 })
+      ?.catch?.(() => {});
+  }
+
+  const container = new pixi.Container();
+  container.eventMode = "none";
+  container.position.set(token.center.x, token.center.y);
+  const graphics = container.addChild(new pixi.Graphics());
+  board.interface.addChild(container);
+
+  // Photosensitive mode gets the ring alone, slower and fainter: no burst of
+  // shards across the screen.
+  const layout = gentle ? [] : shardLayout(BREAK_SHARDS, seedFor(token.id));
+  const state = { t: 0 };
+  const draw = () => {
+    if (graphics.destroyed) return;
+    const frame = shatterFrame(state.t);
+    if (gentle) frame.ringAlpha *= 0.4;
+    drawShatter(graphics, layout, frame, radius, BREAK_COLORS.jade, BREAK_COLORS.break);
+  };
+
+  try {
+    draw();
+    await CanvasAnimation.animate(
+      [{ parent: state, attribute: "t", from: 0, to: 1 }],
+      {
+        name: `${MODULE_ID}.break.${token.id}`,
+        context: container,
+        duration: gentle ? 1600 : BREAK_DURATION,
+        ontick: draw
+      }
+    );
+  } catch (err) {
+    console.error(`${MODULE_ID} | could not play the Break effect`, err);
+  } finally {
+    if (!container.destroyed) container.destroy({ children: true });
+  }
+}
+
+/* -------------------------------------------- */
 /*  The panel                                   */
 /* -------------------------------------------- */
 
@@ -663,6 +907,11 @@ class TurnPanel extends ApplicationV2 {
     this.actor = actor;
     /** Which weapon's gambit list is open, by uuid. */
     this.openGambit = null;
+    /**
+     * The target and its state at the last render, so the render that first
+     * finds a target in Break can mark it, and the shards crack once.
+     */
+    this.lastTarget = null;
   }
 
   static DEFAULT_OPTIONS = {
@@ -833,10 +1082,25 @@ class TurnPanel extends ApplicationV2 {
     // same adjusted number the verdict quotes.
     const { defense } = targetNumbers(target, reforged);
 
+    // Only the render that first finds this target in Break marks it, so the
+    // shards crack once rather than on every refresh.
+    const justBroke = !!target && state === "break"
+      && this.lastTarget?.id === target.id && this.lastTarget.state === "standing";
+    this.lastTarget = target ? { id: target.id, state } : null;
+    const faceoff = [
+      `data-state="${state}"`,
+      justBroke ? `data-just-broke="true"` : "",
+      photosensitive() ? `data-gentle="true"` : ""
+    ].filter(Boolean).join(" ");
+
+    // The target and the verdict share one card: who they are, then what to do
+    // about it.
     return [
       this.#selfBlock(actor, reforged),
+      `<div class="epb-faceoff" ${faceoff}>`,
       this.#targetBlock(target, state, reforged),
       this.#verdictBlock(actor, target, state, reforged),
+      `</div>`,
       this.#attackBlock(actor, allow, why, target, defense, reforged),
       this.#sorceryBlock(actor, allow, why),
       this.#socialBlock(target),
@@ -852,9 +1116,12 @@ class TurnPanel extends ApplicationV2 {
     const hardness = actor.system?.hardness?.value ?? 0;
     const broken = inBreak(actor);
 
+    // Your Poise as shards beside your name: under Combat Reforged it is the
+    // thing standing between you and Break.
     const guard = reforged
-      ? `<span class="epb-stat"><b>${poise.value}</b>/${poise.max} Poise</span>`
-      : `<span class="epb-stat"><b>${hardness}</b> Hardness</span>`;
+      ? `<span class="epb-guard">${poiseShards(poise.value, poise.max, { broken, small: true })}
+           <span class="epb-guard-num"><b>${poise.value}</b>/${poise.max} Poise</span></span>`
+      : `<span class="epb-guard"><span class="epb-guard-num"><b>${hardness}</b> Hardness</span></span>`;
 
     const brokenNote =
       reforged && broken
@@ -865,10 +1132,12 @@ class TurnPanel extends ApplicationV2 {
 
     return `
       <section class="epb-self">
-        <h3>${esc(actor.name)}</h3>
-        <div class="epb-stats">
-          <span class="epb-stat"><b>${power.value}</b>/${power.max ?? 10} Power</span>
+        <div class="epb-self-head">
+          <h3>${esc(actor.name)}</h3>
           ${guard}
+        </div>
+        <div class="epb-stats">
+          <span class="epb-stat epb-stat-power"><b>${power.value}</b>/${power.max ?? 10} Power</span>
           <span class="epb-stat"><b>${motes.value}</b>/${motes.max ?? 0} motes</span>
         </div>
         ${brokenNote}
@@ -888,7 +1157,7 @@ class TurnPanel extends ApplicationV2 {
     const chips = {
       break: ["In Break", "epb-chip-break", "Poise 0 — only decisive attacks."],
       standing: [
-        `Standing · ${target.system?.poise?.value ?? 0} Poise`,
+        "Standing",
         "epb-chip-standing",
         "Wither them until your extra successes reach their Poise."
       ],
@@ -901,10 +1170,23 @@ class TurnPanel extends ApplicationV2 {
     };
     const [label, cls, hint] = chips[state] ?? chips.standard;
 
+    // Poise is only drawn while it matters: a target who has it, or has just
+    // lost it. Battle groups have none, and standard rules use Hardness.
+    const poise = target.system?.poise ?? {};
+    const shown = Math.max(Number(poise.max) || 0, Number(poise.value) || 0);
+    const broken = state === "break";
+    const meter = (state === "standing" || broken) && shown
+      ? `<span class="epb-target-poise">${poiseShards(poise.value, poise.max, { broken })}
+           <span class="epb-poise-num"><b>${broken ? 0 : poise.value ?? 0}</b>/${shown}</span></span>`
+      : "";
+
     return `
       <section class="epb-target">
         <p class="epb-label">Target</p>
-        <p class="epb-target-name">${esc(target.name)}</p>
+        <div class="epb-target-row">
+          <p class="epb-target-name">${esc(target.name)}</p>
+          ${meter}
+        </div>
         <p><span class="epb-chip ${cls}">${label}</span></p>
         <p class="epb-note">${hint}</p>
       </section>`;
@@ -1283,6 +1565,17 @@ Hooks.once("init", () => {
     default: true
   });
 
+  game.settings.register(MODULE_ID, "breakEffect", {
+    name: "Show the Break effect",
+    hint: "Plays a shatter on a token the moment it Breaks. With Foundry's "
+      + "photosensitive mode on, it is a slow, faint ring instead. Turn this "
+      + "off to hide it.",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
   game.settings.register(MODULE_ID, "autoOpen", {
     name: "Open automatically on your turn",
     hint: "Opens the panel when a combat turn reaches a character you control.",
@@ -1335,6 +1628,12 @@ Hooks.once("ready", () => {
   });
   Hooks.on("deleteCombat", (combat) => sweepGambitEffects(combat, { ended: true }));
 
+  // The moment a token Breaks, its Poise shatters off it - on every client that
+  // can see it, however the status was applied.
+  Hooks.on("createActiveEffect", (effect) => {
+    for (const token of breakEffectTokens(effect)) playBreakEffect(token);
+  });
+
   // Targeting, Break being toggled, and Power or Poise changing all alter what
   // the panel should be offering, so each one re-renders it.
   Hooks.on("targetToken", refreshPanel);
@@ -1364,5 +1663,8 @@ export {
   resolveMissingGambits, afterActorSettles, grappleTheAttacker,
   TIMED_GAMBIT_EFFECTS, timedGambitEffect, gambitEffectOver, isResponsibleGM,
   stampGambitEffect, sweepGambitEffects, roundAdvanced,
+  poiseShards, photosensitive, BREAK_COLORS, isBreakEffect, breakEffectTokens,
+  seedFor, shardLayout, shatterFrame, mixColor, CRACK_LIGHT, shardColor,
+  drawShatter, playBreakEffect,
   TurnPanel
 };

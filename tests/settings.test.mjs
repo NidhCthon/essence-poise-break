@@ -34,3 +34,8 @@ test("control spells are off until a table opts in", () => {
 test("clearing finished gambit effects is on by default", () => {
   assert.equal(byKey.clearGambitEffects.default, true);
 });
+
+test("the Break effect is each player's own choice, on unless they turn it off", () => {
+  assert.equal(byKey.breakEffect.scope, "client");
+  assert.equal(byKey.breakEffect.default, true);
+});

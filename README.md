@@ -45,6 +45,15 @@ standard rules and leaves both attack types available.
   round is up. The Storyteller's client records when each began, deletes it once
   its time runs out, and clears the rest when the combat ends. A world setting
   turns this off.
+- **Shows Poise as jade shards, and Break as them cracking.** Your own Poise sits
+  beside your name; your target's sits in one card with the verdict, edged in
+  the colour of their state. When a target Breaks while the panel is open, the
+  shards crack once. The number is always printed beside them too.
+- **Plays a Break effect on the map.** The moment a token Breaks, a ring of jade
+  shards flashes and scatters off it, on every player's screen and however
+  Break was applied. A token a player can't see never shows it, so it never
+  gives a hidden token away. Foundry's photosensitive mode turns it into a slow,
+  faint ring, and each player can switch it off.
 - Tells you, when you are in Break, how much Poise you still need — Power you
   gain refills Poise before it reaches your pool.
 - For sorcerers, a **Sorcery** section: your current Will out of 10, every spell
@@ -167,6 +176,21 @@ Fixing drift is one function. The panel's working line tells you which modifier
 disagreed; correct `targetNumbers()`, then re-record with
 `python tools/check-roller.py --update`.
 
+## Previewing changes
+
+`tools/preview/` renders the panel in every state, in both the dark and light
+themes, and the Break effect frame by frame, all from the module's own code
+under the same stubbed Foundry the tests use.
+
+```bash
+python tools/preview/serve.py
+```
+
+Then open <http://127.0.0.1:8791/tools/preview/>. For a faithful look, copy
+`public/css/foundry2.css` and `public/fonts/` from your own Foundry install into
+`tools/preview/.foundry/`, which git ignores. Without them the page still
+renders, in fallback fonts.
+
 ## Known limits
 
 - Only **equipped** weapons appear, since `weaponAttack` needs a weapon's uuid.
@@ -183,6 +207,8 @@ disagreed; correct `targetNumbers()`, then re-record with
 - **Ending a grapple is manual.** The panel adds the Grappling effect to both
   sides; nothing removes it when someone escapes. Clear the status on both
   tokens — the penalty goes with it.
+- **The Break effect plays on the scene you are viewing.** A token that Breaks
+  on another scene shows nothing when you get there.
 - **Only combatants are swept.** A gambit against a token that isn't in the
   combat tracker keeps its effect until someone removes it.
 - `game.exaltedessence` is the system's macro API rather than a documented one.
