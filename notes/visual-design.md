@@ -46,6 +46,25 @@ Everything else is kept quiet so the shards read first. There are no boxes
 around stats, no dividers between most sections, and one card: the target and
 the verdict together, edged in the target's state.
 
+## The word BREAK
+
+The shatter carries the word too. It slams down from nearly twice its size and
+lands, then shudders and cracks in two along a jagged line: two copies of the
+word, each masked to one side of the crack, pulled apart. It cools from
+white-hot to break red and rises out. At 1.7 seconds it lasts longer than the
+shards, because a word has to be read and a flash does not.
+
+It is drawn with Foundry's PreciseText, which renders at double resolution, so
+it stays sharp at any zoom. It sits at the token rather than across the screen:
+a banner would announce that a hidden token had Broken, and it would cover the
+table's view of the map.
+
+Foundry already floats a small "+(Break)" from the token when the status lands.
+With BREAK playing, that says the same thing twice in the same place, so the
+module wraps `ActiveEffect#_displayScrollingStatus` and skips it for Break alone,
+only as it lands, and only on a client showing the effect. Everything else,
+including "-(Break)" as Break ends, is left exactly as Foundry draws it.
+
 ## Motion
 
 There are two moments, and nothing else moves:

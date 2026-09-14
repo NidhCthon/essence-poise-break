@@ -50,10 +50,13 @@ standard rules and leaves both attack types available.
   the colour of their state. When a target Breaks while the panel is open, the
   shards crack once. The number is always printed beside them too.
 - **Plays a Break effect on the map.** The moment a token Breaks, a ring of jade
-  shards flashes and scatters off it, on every player's screen and however
-  Break was applied. A token a player can't see never shows it, so it never
-  gives a hidden token away. Foundry's photosensitive mode turns it into a slow,
-  faint ring, and each player can switch it off.
+  shards flashes and scatters off it, and the word BREAK slams down over the
+  token, cracks in two, turns red, rises and fades. It plays on every player's
+  screen, however Break was applied. A token a player can't see never shows it,
+  so it never gives a hidden token away. On a screen showing it, Foundry's own
+  small "+(Break)" is skipped, so the news isn't said twice. Foundry's
+  photosensitive mode turns it into a faint ring and a slow fade, and each
+  player can switch it off.
 - Tells you, when you are in Break, how much Poise you still need — Power you
   gain refills Poise before it reaches your pool.
 - For sorcerers, a **Sorcery** section: your current Will out of 10, every spell

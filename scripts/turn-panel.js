@@ -841,6 +841,148 @@ function drawShatter(graphics, layout, frame, radius, from, to) {
 }
 
 /**
+ * The word BREAK, over the shards.
+ *
+ * It slams down from nearly twice its size, cracks in two along the same kind
+ * of jagged line that splits a panel shard, cools from white-hot to break red,
+ * then rises and fades - lingering longer than the shards, long enough to read.
+ */
+const BREAK_TEXT_DURATION = 1700;
+const BREAK_TEXT_DURATION_GENTLE = 2200;
+const BREAK_TEXT_IMPACT = 0.14;
+
+/** The word at progress t, from 0 to 1. */
+function breakTextFrame(t, { gentle = false } = {}) {
+  const p = Math.min(1, Math.max(0, Number(t) || 0));
+  if (gentle) {
+    // Photosensitive mode: no slam, no shudder, no flash. It fades in already
+    // red, holds, and fades out.
+    return {
+      alpha: p < 0.2 ? p / 0.2 : p > 0.7 ? Math.max(0, (1 - p) / 0.3) : 1,
+      scale: 1,
+      shake: 0,
+      split: 0,
+      tint: 1,
+      rise: p > 0.7 ? (0.5 * (p - 0.7)) / (1 - 0.7) : 0
+    };
+  }
+  const landing = Math.min(1, p / BREAK_TEXT_IMPACT);
+  const since = Math.max(0, p - BREAK_TEXT_IMPACT);
+  const settle = Math.min(1, since / 0.16);
+  return {
+    alpha: p < 0.06 ? p / 0.06 : p > 0.62 ? Math.max(0, (1 - p) / 0.38) : 1,
+    scale: p < BREAK_TEXT_IMPACT ? 1.9 - 0.9 * (1 - (1 - landing) ** 3) : 1,
+    // A short shudder from the moment it lands, dying away.
+    shake: since > 0 && since < 0.2 ? Math.sin(since * 140) * (1 - since / 0.2) : 0,
+    split: 1 - (1 - settle) ** 3,
+    tint: Math.min(1, since / 0.18),
+    // Divided by (1 - 0.55), not 0.45: in floating point that reaches exactly
+    // 1 at the end, where 0.45 lands a hair short.
+    rise: p > 0.55 ? (p - 0.55) / (1 - 0.55) : 0
+  };
+}
+
+/** Big enough to read over a small token, and never swamping a large one. */
+function breakTextSize(radius) {
+  return Math.round(Math.min(72, Math.max(26, (Number(radius) || 0) * 0.62)));
+}
+
+/**
+ * The mask for one half of the word: from a jagged crack a little off centre,
+ * out past the word's edge. Both halves share the crack, so at rest they meet
+ * exactly and the word reads whole.
+ */
+function crackMask(side, width, height) {
+  const crack = [[0.07, -0.75], [-0.03, -0.12], [0.05, 0.14], [-0.06, 0.75]]
+    .map(([x, y]) => [x * width, y * height]);
+  const edge = side * width;
+  return [...crack, [edge, 0.75 * height], [edge, -0.75 * height]].flat();
+}
+
+function breakTextStyle(pixi, size) {
+  const options = {
+    fontFamily: "Modesto Condensed",
+    fontSize: size,
+    fill: 0xFFFFFF,
+    stroke: 0x160A08,
+    strokeThickness: Math.max(3, Math.round(size * 0.1)),
+    letterSpacing: Math.round(size * 0.06),
+    align: "center",
+    dropShadow: true,
+    dropShadowColor: 0x000000,
+    dropShadowAlpha: 0.85,
+    dropShadowBlur: Math.round(size * 0.25),
+    dropShadowDistance: 0,
+    dropShadowAngle: 0
+  };
+  const Precise = foundry.canvas?.containers?.PreciseText;
+  return typeof Precise?.getTextStyle === "function"
+    ? Precise.getTextStyle(options)
+    : new pixi.TextStyle(options);
+}
+
+/**
+ * Build the word as two copies, each masked to one side of the crack so the
+ * halves can come apart. Foundry's PreciseText keeps it sharp at any zoom;
+ * plain PIXI text stands in outside Foundry. Returns the container and a
+ * function that draws the word at progress t.
+ */
+function createBreakText(pixi, radius, { gentle = false } = {}) {
+  const size = breakTextSize(radius);
+  const style = breakTextStyle(pixi, size);
+  const TextClass = foundry.canvas?.containers?.PreciseText ?? pixi.Text;
+
+  const root = new pixi.Container();
+  root.eventMode = "none";
+  const halves = [-1, 1].map((side) => {
+    const piece = root.addChild(new pixi.Container());
+    const text = piece.addChild(new TextClass("BREAK", style));
+    text.anchor.set(0.5, 0.5);
+    const mask = piece.addChild(new pixi.Graphics());
+    mask.beginFill(0xFFFFFF);
+    mask.drawPolygon(crackMask(side, text.width, text.height));
+    mask.endFill();
+    text.mask = mask;
+    return { piece, text, side };
+  });
+
+  const update = (t) => {
+    const frame = breakTextFrame(t, { gentle });
+    root.alpha = frame.alpha;
+    root.scale.set(frame.scale);
+    root.position.set(frame.shake * size * 0.06, -radius * (0.15 + 0.5 * frame.rise));
+    const color = mixColor(CRACK_LIGHT, BREAK_COLORS.break, frame.tint);
+    for (const { piece, text, side } of halves) {
+      text.tint = color;
+      piece.position.set(side * frame.split * size * 0.05, side * frame.split * size * 0.03);
+      piece.rotation = side * frame.split * 0.035;
+    }
+  };
+  update(0);
+  return { container: root, update, size };
+}
+
+/**
+ * Foundry floats a small "+(Break)" as the status lands. With the BREAK text
+ * playing, that says the same thing twice in the same place, so on a client
+ * showing the effect it is skipped - for Break alone, and only as it lands.
+ * Every other status, and "-(Break)" as Break ends, is drawn exactly as
+ * Foundry draws it. A player with the effect switched off keeps Foundry's.
+ */
+function quietCoreBreakText() {
+  const documentClass = CONFIG.ActiveEffect?.documentClass;
+  const original = documentClass?.prototype?._displayScrollingStatus;
+  if (typeof original !== "function" || original.epbQuietsBreak) return false;
+  const wrapped = function (enabled) {
+    if (enabled && isBreakEffect(this) && showingBreakEffect()) return undefined;
+    return original.call(this, enabled);
+  };
+  wrapped.epbQuietsBreak = true;
+  documentClass.prototype._displayScrollingStatus = wrapped;
+  return true;
+}
+
+/**
  * Play the shatter on one token. The drawing lives in the interface canvas
  * group, above the tokens, and is destroyed when the animation ends - or found
  * already destroyed, if the canvas was torn down around it.
@@ -866,6 +1008,15 @@ async function playBreakEffect(token) {
   container.eventMode = "none";
   container.position.set(token.center.x, token.center.y);
   const graphics = container.addChild(new pixi.Graphics());
+  // The word sits on top of the shards. If it cannot be built for any reason,
+  // the shatter still plays without it.
+  let label = null;
+  try {
+    label = createBreakText(pixi, radius, { gentle });
+    container.addChild(label.container);
+  } catch (err) {
+    console.warn(`${MODULE_ID} | could not draw the BREAK text`, err);
+  }
   board.interface.addChild(container);
 
   // Photosensitive mode gets the ring alone, slower and fainter: no burst of
@@ -879,17 +1030,34 @@ async function playBreakEffect(token) {
     drawShatter(graphics, layout, frame, radius, BREAK_COLORS.jade, BREAK_COLORS.break);
   };
 
+  const words = { t: 0 };
+  const write = () => {
+    if (label && !label.container.destroyed) label.update(words.t);
+  };
+
   try {
     draw();
-    await CanvasAnimation.animate(
-      [{ parent: state, attribute: "t", from: 0, to: 1 }],
-      {
-        name: `${MODULE_ID}.break.${token.id}`,
-        context: container,
-        duration: gentle ? 1600 : BREAK_DURATION,
-        ontick: draw
-      }
-    );
+    write();
+    await Promise.all([
+      CanvasAnimation.animate(
+        [{ parent: state, attribute: "t", from: 0, to: 1 }],
+        {
+          name: `${MODULE_ID}.break.${token.id}`,
+          context: container,
+          duration: gentle ? 1600 : BREAK_DURATION,
+          ontick: draw
+        }
+      ),
+      label ? CanvasAnimation.animate(
+        [{ parent: words, attribute: "t", from: 0, to: 1 }],
+        {
+          name: `${MODULE_ID}.break-text.${token.id}`,
+          context: container,
+          duration: gentle ? BREAK_TEXT_DURATION_GENTLE : BREAK_TEXT_DURATION,
+          ontick: write
+        }
+      ) : null
+    ]);
   } catch (err) {
     console.error(`${MODULE_ID} | could not play the Break effect`, err);
   } finally {
@@ -1567,9 +1735,9 @@ Hooks.once("init", () => {
 
   game.settings.register(MODULE_ID, "breakEffect", {
     name: "Show the Break effect",
-    hint: "Plays a shatter on a token the moment it Breaks. With Foundry's "
-      + "photosensitive mode on, it is a slow, faint ring instead. Turn this "
-      + "off to hide it.",
+    hint: "Shatters a token's Poise and slams the word BREAK over it the moment "
+      + "it Breaks. With Foundry's photosensitive mode on, it is a faint ring "
+      + "and a slow fade instead. Turn this off to hide it.",
     scope: "client",
     config: true,
     type: Boolean,
@@ -1634,6 +1802,9 @@ Hooks.once("ready", () => {
     for (const token of breakEffectTokens(effect)) playBreakEffect(token);
   });
 
+  // Foundry's own small "+(Break)" would say the same thing as the BREAK text.
+  quietCoreBreakText();
+
   // Targeting, Break being toggled, and Power or Poise changing all alter what
   // the panel should be offering, so each one re-renders it.
   Hooks.on("targetToken", refreshPanel);
@@ -1665,6 +1836,7 @@ export {
   stampGambitEffect, sweepGambitEffects, roundAdvanced,
   poiseShards, photosensitive, BREAK_COLORS, isBreakEffect, breakEffectTokens,
   seedFor, shardLayout, shatterFrame, mixColor, CRACK_LIGHT, shardColor,
-  drawShatter, playBreakEffect,
+  drawShatter, playBreakEffect, BREAK_TEXT_DURATION, breakTextFrame, breakTextSize,
+  crackMask, createBreakText, quietCoreBreakText,
   TurnPanel
 };
