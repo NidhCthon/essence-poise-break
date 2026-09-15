@@ -4,7 +4,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { panel, settings } from "./foundry.mjs";
 
-const { breakTextFrame, breakTextSize, crackMask, quietCoreBreakText } = panel;
+const {
+  breakTextFrame, breakTextSize, crackMask, quietCoreBreakText,
+  BREAK_TEXT_SIZE_MIN, BREAK_TEXT_SIZE_MAX, calloutSize
+} = panel;
 
 /* ------------------------------ the timeline --------------------------- */
 
@@ -70,10 +73,17 @@ test("photosensitive mode drops the slam, the shudder, the split and the flash",
 
 /* ------------------------------ size and crack ------------------------- */
 
-test("the word is readable on a small token and never swamps a large one", () => {
-  assert.equal(breakTextSize(10), 26);
-  assert.equal(breakTextSize(50), 31);
-  assert.equal(breakTextSize(500), 72);
+test("the word is readable on a small token and bounded over a huge one", () => {
+  assert.equal(breakTextSize(10), BREAK_TEXT_SIZE_MIN);
+  assert.equal(breakTextSize(50), 60);
+  assert.equal(breakTextSize(500), BREAK_TEXT_SIZE_MAX);
+});
+
+test("on any token the word is bigger than a Charm callout", () => {
+  // The table asked for both bigger; a Break is still the bigger event.
+  for (const radius of [10, 25, 50, 75, 100, 200, 500]) {
+    assert.ok(breakTextSize(radius) > calloutSize(radius), `radius ${radius}`);
+  }
 });
 
 test("the two halves meet exactly along the crack, and each reaches past its edge", () => {

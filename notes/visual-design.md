@@ -54,6 +54,11 @@ word, each masked to one side of the crack, pulled apart. It cools from
 white-hot to break red and rises out. At 1.7 seconds it lasts longer than the
 shards, because a word has to be read and a flash does not.
 
+It is the biggest text on the map. It first shipped at about two thirds of the
+token's radius - 31 pixels on an ordinary token - which the table found too
+small, so it is now a little over the radius, from 48 to 120 pixels: about 60
+on an ordinary token, well above a Charm callout.
+
 It is drawn with Foundry's PreciseText, which renders at double resolution, so
 it stays sharp at any zoom. It sits at the token rather than across the screen:
 a banner would announce that a hidden token had Broken, and it would cover the
@@ -140,8 +145,9 @@ It is quieter than BREAK in what it does, not in how big it is. It does not
 crack, and its colour is the character's anima tinted towards light rather than
 break red, since a Charm is theirs rather than something done to them. It first
 shipped at about a third of the token's radius, and at the table that was too
-small to read with the map zoomed out, so a name is now sized like the BREAK
-word - a little over two thirds of the radius, from 30 to 68 pixels.
+small to read with the map zoomed out, so a name is now a little over two
+thirds of the radius, from 30 to 68 pixels - still under the BREAK word, which
+grew too.
 Several Charms come out a quarter of a second apart, each above the last, so a
 stack of techniques reads as a sequence rather than a block of text.
 

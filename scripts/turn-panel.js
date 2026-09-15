@@ -882,9 +882,19 @@ function breakTextFrame(t, { gentle = false } = {}) {
   };
 }
 
-/** Big enough to read over a small token, and never swamping a large one. */
+/** The word's size, in pixels at scene scale. */
+const BREAK_TEXT_SIZE_MIN = 48;
+const BREAK_TEXT_SIZE_MAX = 120;
+
+/**
+ * Big enough to land as the biggest thing on the map for a moment - and bigger
+ * than a Charm callout, since a Break is the bigger event. It first shipped at
+ * about two thirds of the token's radius, which the table found too small, so
+ * it is now a little over the radius, and still bounded over a huge token.
+ */
 function breakTextSize(radius) {
-  return Math.round(Math.min(72, Math.max(26, (Number(radius) || 0) * 0.62)));
+  return Math.round(Math.min(BREAK_TEXT_SIZE_MAX,
+    Math.max(BREAK_TEXT_SIZE_MIN, (Number(radius) || 0) * 1.2)));
 }
 
 /**
@@ -2916,6 +2926,7 @@ export {
   poiseShards, photosensitive, BREAK_COLORS, isBreakEffect, breakEffectTokens,
   seedFor, shardLayout, shatterFrame, mixColor, CRACK_LIGHT, shardColor,
   drawShatter, playBreakEffect, BREAK_TEXT_DURATION, breakTextFrame, breakTextSize,
+  BREAK_TEXT_SIZE_MIN, BREAK_TEXT_SIZE_MAX,
   crackMask, createBreakText, quietCoreBreakText,
   CUT_IN_SOCKET, CUT_IN_MESSAGE, CUT_IN_DURATION, CUT_IN_DURATION_GENTLE,
   CUT_IN_CHARMS, CUT_IN_FALLBACK, CUT_IN_PORTRAIT,
