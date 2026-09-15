@@ -218,7 +218,8 @@ const flareApp = new PIXI.Application({
 });
 document.getElementById("flare").append(flareApp.view);
 const flareColor = 0xFF6A1A;
-const flareRadius = radius * 0.6;
+// Small, so the whole column fits the frame: it is FLARE_HEIGHT radii tall.
+const flareRadius = radius * 0.4;
 
 function flareStage(x, caption, { gentle = false } = {}) {
   const disc = new PIXI.Graphics();

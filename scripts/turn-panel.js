@@ -1723,8 +1723,13 @@ const FLARE_DURATION = 2200;
 const FLARE_DURATION_GENTLE = 3000;
 const FLARE_EMBERS = 18;
 const FLARE_EMBERS_GENTLE = 6;
-/** How far the column rises, in token radii. */
-const FLARE_HEIGHT = 7;
+/**
+ * How far the column rises and how wide its sheath is, in token radii. The
+ * first column, seven radii by a little over half, read as a thin candle over
+ * a token at the table, so both grew.
+ */
+const FLARE_HEIGHT = 12;
+const FLARE_WIDTH = 0.85;
 const FLARE_ICONIC_MAX = 110;
 /** The system's anima levels, lowest first; "" is no anima showing. */
 const ANIMA_LEVELS = ["", "dim", "glowing", "burning", "bonfire", "iconic"];
@@ -1930,7 +1935,7 @@ function emberLayout(count, seed) {
     offset: (random() - 0.5) * 1.0,
     drift: (random() - 0.5) * 0.4,
     speed: 0.55 + random() * 0.5,
-    size: 0.025 + random() * 0.035,
+    size: 0.035 + random() * 0.05,
     delay: random() * 0.35
   }));
 }
@@ -1951,7 +1956,7 @@ function drawFlare(graphics, layout, frame, radius, color) {
   // Faintest where it is widest.
   for (let i = 3; i >= 1; i--) {
     graphics.beginFill(color, frame.alpha * frame.glow * 0.1 * (4 - i));
-    graphics.drawCircle(0, base * 0.3, radius * (0.4 + 0.3 * i));
+    graphics.drawCircle(0, base * 0.3, radius * (0.5 + 0.45 * i));
     graphics.endFill();
   }
 
@@ -1961,7 +1966,7 @@ function drawFlare(graphics, layout, frame, radius, color) {
     for (let i = 0; i < bands; i++) {
       const along = i / bands;
       const fade = (1 - along) ** 1.6;
-      const sheath = radius * 0.55 * frame.flicker * (1 - 0.45 * along);
+      const sheath = radius * FLARE_WIDTH * frame.flicker * (1 - 0.45 * along);
       const top = base - step * (i + 1);
       // Each band exactly its own height. Overlapping them, in added light,
       // doubles the brightness where they meet and stripes the column.
@@ -3299,7 +3304,7 @@ export {
   shouldShowCutIn, cutInCharms, cutInMarkup, playCutIn, wrapAttackSequence,
   receiveCutIn,
   FLARE_MESSAGE, FLARE_DURATION, FLARE_DURATION_GENTLE, FLARE_EMBERS,
-  FLARE_EMBERS_GENTLE, FLARE_HEIGHT, FLARE_ICONIC_MAX,
+  FLARE_EMBERS_GENTLE, FLARE_HEIGHT, FLARE_WIDTH, FLARE_ICONIC_MAX,
   animaRank, crossesIntoFlare, iconicLine, flareLevelLabel, cleanFlarePayload,
   animaFlarePayload, changesAnima, recordAnimaBefore, animaAfterUpdate, flareToken,
   shouldShowFlare, flareFrame, emberLayout, drawFlare, flareCaptionMarkup,

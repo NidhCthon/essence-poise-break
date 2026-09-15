@@ -133,6 +133,11 @@ It is drawn with plain PIXI shapes rather than textures - stacked bands that
 thin and fade towards the top - so it needs nothing loaded and can be tested
 and previewed on its own, like the shatter.
 
+The first column was seven token radii tall and a little over half a radius
+wide, which read as a candle standing on the token rather than an anima
+erupting. It is now twelve radii by 0.85, over a wider pool of light and with
+larger embers.
+
 The screen gets two things. A glow runs round its edges as the column erupts,
 and a caption names the level and the character, with the first sentence of a
 player character's iconic anima: the thing everyone at the table would see.

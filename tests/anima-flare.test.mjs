@@ -9,7 +9,7 @@ const {
   changesAnima, recordAnimaBefore, animaAfterUpdate, shouldShowFlare, flareFrame,
   emberLayout, flareCaptionMarkup, playAnimaFlare, receiveAnimaFlare,
   FLARE_MESSAGE, FLARE_DURATION, FLARE_DURATION_GENTLE, FLARE_EMBERS, FLARE_ICONIC_MAX,
-  CUT_IN_FALLBACK
+  FLARE_HEIGHT, FLARE_WIDTH, CUT_IN_FALLBACK
 } = panel;
 
 const scene = { id: "scene" };
@@ -254,6 +254,12 @@ test("photosensitive mode: no ring, never full brightness, no flicker", () => {
     assert.equal(frame.flicker, 1);
     assert.ok(frame.alpha <= 0.6);
   }
+});
+
+test("the column towers over the token rather than standing on it like a candle", () => {
+  // The table asked for it bigger twice over; these are in token radii.
+  assert.ok(FLARE_HEIGHT >= 10, "shorter than ten radii reads as a candle");
+  assert.ok(FLARE_WIDTH >= 0.8 && FLARE_WIDTH <= 1.2, "as wide as the token, near enough");
 });
 
 test("embers are laid out the same way every time for the same token", () => {
