@@ -14,6 +14,7 @@ export const settings = new Map([
   ["essence-poise-break.decisiveCutIn", true],
   ["essence-poise-break.revealStorytellerCharms", false],
   ["essence-poise-break.animaFlare", true],
+  ["essence-poise-break.charmCallouts", true],
   ["essence-poise-break.autoOpen", true]
 ]);
 

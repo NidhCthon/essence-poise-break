@@ -140,7 +140,7 @@ about a second and a half and never takes a click.
   attacker on another scene, it shows to that character's owners and the
   Storyteller.
 - An antagonist's cut-in keeps its Charms from the players unless the
-  Storyteller turns on **Name the Storyteller's Charms in the cut-in**.
+  Storyteller turns on **Name the Storyteller's Charms**.
 - With Foundry's photosensitive mode or the browser's reduced-motion setting,
   it fades in and out with no flash, speed lines or slam. Each player can turn
   it off with **Show the decisive cut-in**.
@@ -161,6 +161,23 @@ character's iconic anima from their sheet.
 - With Foundry's photosensitive mode or reduced motion it is a slow, faint
   column with no ring and no flash round the edges. Each player can turn it off
   with **Show the anima flare**.
+
+## Charm callouts
+
+The moment a character uses a Charm, its name bursts from their token in the
+same carved lettering as the BREAK text, rises and fades. Several Charms
+together come out one after another, stacked, with any past four counted.
+
+- A Charm counts as used when the roller pays for it — as the dice are rolled,
+  once per roll — or when it is spent from the character sheet. Switching an
+  active Charm off from the sheet calls nothing out.
+- Each player sees callouts only for a token they can see, on the scene they
+  are viewing. An antagonist's Charm names stay with the Storyteller unless
+  they turn on **Name the Storyteller's Charms**, which also covers the cut-in.
+- A decisive attack names its Charms twice, on purpose: at the token as the
+  dice are rolled, then across the screen in the cut-in if it lands.
+- With Foundry's photosensitive mode the names fade in and out with no burst.
+  Each player can turn them off with **Show Charm callouts**.
 
 ## How it hooks in
 
@@ -199,6 +216,12 @@ recalculated it; if it rose into Bonfire or Iconic, that client plays the flare
 and sends it over the same socket. The `preUpdateActor` watcher never returns a
 value, because Foundry cancels an update when one of those returns `false`.
 
+Charm callouts wrap two more of the system's steps, in the same way: the
+roller's `_updateRollerResources`, where it pays for the Charms added to a roll,
+and the actor's `spendItem`, where the sheet pays for one. Each runs first and
+unchanged; the callout follows, sent over the same socket. The roller pays
+again after a damage roll, so each roller calls a Charm out only once.
+
 ## Staying in step with the system
 
 `targetNumbers()` mirrors the modifiers the system's roller applies to a target
@@ -215,9 +238,9 @@ drifts, so four things watch for it:
   a broken check can never break a roll.
 - **A weekly job watches the system's source.** `tools/check-roller.py` extracts
   the roller's condition block, its Defense branch, its social block, its
-  gambit cost table and the lines the decisive cut-in reads — plus, from the
-  actor, where anima levels are worked out — and compares each with the
-  fingerprint in
+  gambit cost table and the lines the decisive cut-in and Charm callouts rely
+  on — plus, from the actor, where anima levels are worked out and where the
+  sheet spends a Charm — and compares each with the fingerprint in
   `.roller-watch.json`. It also compares the system's latest release with the
   version the panel was verified against. Either change fails the run, so you
   hear about it before a session rather than during one.
@@ -236,9 +259,9 @@ disagreed; correct `targetNumbers()`, then re-record with
 ## Previewing changes
 
 `tools/preview/` renders the panel in every state, in both the dark and light
-themes, and the Break effect, the decisive cut-in and the anima flare frame by
-frame, all from the module's own code under the same stubbed Foundry the tests
-use.
+themes, and the Break effect, the decisive cut-in, the anima flare and Charm
+callouts frame by frame, all from the module's own code under the same stubbed
+Foundry the tests use.
 
 ```bash
 python tools/preview/serve.py

@@ -24,6 +24,10 @@
     "anima": {
       "sha256": "54a4815c7298c52b242f888920dfef8e419df8e26a22860f52d9e06a37f5da00",
       "block": "_prepareBaseActorData(system) { system.motes.max = system.essence.value * 2 + Math.floor((system.essence.value - 1) / 2) + 3; let animaLevel = \"\"; if (game.settings.get(\"exaltedessence\", \"alternateAnima\")) { const animaMap = { 0: 'dim', 1: 'glowing', 2: 'burning', 3: 'iconic', }; animaLevel = animaMap[system.anima.value]; } else { if (system.anima.value >= 1) { animaLevel = \"dim\"; } if (system.anima.value >= 3) { animaLevel = \"glowing\"; } if (system.anima.value >= 5) { animaLevel = \"burning\"; } if (system.anima.value >= 7) { animaLevel = \"bonfire\"; } if (system.anima.value === 10) { animaLevel = \"iconic\"; } } system.anima.level = animaLevel; }"
+    },
+    "callouts": {
+      "sha256": "c6c5c12585b5fdf411cb01a69f7000a103f8cf305b9c1216411aee4cc2580e82",
+      "block": "async _updateRollerResources() { this._updateRollerResources(); this._updateRollerResources(); await this._updateRollerResources(); this.object.addedCharms.push(item); spendItem(item) { if (item.system.active) {"
     }
   }
 }

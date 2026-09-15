@@ -17,6 +17,9 @@ say what a roll needs before the roller runs:
 * The anima flare plays on the step into the `bonfire` or `iconic` anima
   level, which the actor - not the roller - works out. That block is watched
   in the actor's source.
+* Charm callouts wrap the roller's `_updateRollerResources()`, where it pays
+  for a roll's Charms, and the actor's `spendItem()`, where the sheet pays for
+  one - telling a use from switching off by `item.system.active`.
 
 That duplication is deliberate, but it means the module can fall out of step
 when the system changes.
@@ -50,6 +53,19 @@ ACTOR_SOURCE = ("https://raw.githubusercontent.com/Aliharu/Foundry-ExEss/master/
 # Where the actor turns an anima value into its level: the names the flare
 # plays on, and the values each is reached at.
 ANIMA_ANCHOR = "_prepareBaseActorData(system) {"
+
+# What Charm callouts wrap: the roller's payment for a roll and its calls, and
+# the actor's spend of one item with the test that tells a use from switching
+# a Charm off. Every copy of each is taken.
+CALLOUT_ROLLER_LINES = [
+    re.compile(r"^\s*async _updateRollerResources\(\)\s*\{\s*$", re.M),
+    re.compile(r"^.*\bthis\._updateRollerResources\(\);.*$", re.M),
+    re.compile(r"^.*this\.object\.addedCharms\.push\(item\);.*$", re.M),
+]
+CALLOUT_ACTOR_LINES = [
+    re.compile(r"^\s*spendItem\(item\)\s*\{\s*$", re.M),
+    re.compile(r"^\s*if \(item\.system\.active\) \{\s*$", re.M),
+]
 PANEL = Path(__file__).resolve().parent.parent / "scripts" / "turn-panel.js"
 VERIFIED = re.compile(r'const VERIFIED_SYSTEM = "([^"]+)"')
 
@@ -183,7 +199,8 @@ def main():
                         help="record the current block as the expected one")
     args = parser.parse_args()
 
-    blocks = extract(fetch(SOURCE))
+    roller = fetch(SOURCE)
+    blocks = extract(roller)
     if blocks is None:
         print("FAIL: could not find a watched block in the roller.")
         print("The system has been restructured; check targetNumbers() and "
@@ -191,13 +208,26 @@ def main():
         print(SOURCE)
         return 1
 
-    anima = braced_block(fetch(ACTOR_SOURCE), ANIMA_ANCHOR)
+    actor = fetch(ACTOR_SOURCE)
+    anima = braced_block(actor, ANIMA_ANCHOR)
     if anima is None:
         print("FAIL: could not find where the actor works out its anima level.")
         print("Check animaRank() and the anima flare by hand.")
         print(ACTOR_SOURCE)
         return 1
     blocks["anima"] = normalise(anima)
+
+    callouts = []
+    for source, patterns in ((roller, CALLOUT_ROLLER_LINES), (actor, CALLOUT_ACTOR_LINES)):
+        for pattern in patterns:
+            found = pattern.findall(source)
+            if not found:
+                print("FAIL: could not find what Charm callouts wrap: {}".format(
+                    pattern.pattern))
+                print("Check wrapRollerResources() and wrapSpendItem() by hand.")
+                return 1
+            callouts.extend(found)
+    blocks["callouts"] = normalise("\n".join(callouts))
 
     digests = {name: hashlib.sha256(text.encode("utf-8")).hexdigest()
                for name, text in blocks.items()}
@@ -229,7 +259,9 @@ def main():
             "gambits": "the GAMBITS table in scripts/turn-panel.js",
             "cutin": "isDecisiveHit(), cutInPayload() and wrapAttackSequence() "
                      "in scripts/turn-panel.js",
-            "anima": "animaRank() and crossesIntoFlare() in scripts/turn-panel.js"}
+            "anima": "animaRank() and crossesIntoFlare() in scripts/turn-panel.js",
+            "callouts": "rollerCallout(), sheetCallout() and their wraps in "
+                        "scripts/turn-panel.js"}
     changed = [name for name in blocks
                if expected["blocks"].get(name, {}).get("sha256")
                != digests[name]]

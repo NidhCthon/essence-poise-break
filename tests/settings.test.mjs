@@ -54,3 +54,8 @@ test("the anima flare is each player's own choice, on unless they turn it off", 
   assert.equal(byKey.animaFlare.scope, "client");
   assert.equal(byKey.animaFlare.default, true);
 });
+
+test("Charm callouts are each player's own choice, on unless they turn them off", () => {
+  assert.equal(byKey.charmCallouts.scope, "client");
+  assert.equal(byKey.charmCallouts.default, true);
+});

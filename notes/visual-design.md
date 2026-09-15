@@ -67,7 +67,7 @@ including "-(Break)" as Break ends, is left exactly as Foundry draws it.
 
 ## Motion
 
-There are four moments, and nothing else moves:
+There are five moments, and nothing else moves:
 
 - **The panel's crack.** Only the render that first finds a target in Break
   marks it (`data-just-broke`), so the shards crack once, not on every refresh.
@@ -78,6 +78,8 @@ There are four moments, and nothing else moves:
   See below.
 - **The anima flare.** A little over two seconds, at the token, with a caption
   and an edge glow on screen. See below.
+- **Charm callouts.** About a second and a half per name, at the token. See
+  below.
 
 Foundry's photosensitive mode turns off the panel's crack and reduces the map
 effect to a slow, faint ring. The browser's reduced-motion preference turns the
@@ -126,6 +128,23 @@ player character's iconic anima: the thing everyone at the table would see.
 
 Photosensitive mode and reduced motion get a slow, faint column with no ring,
 no flicker and no glow round the edges, and a caption that only fades.
+
+## Charm callouts
+
+A Charm being used is named out loud, the way a technique is in the shows this
+game borrows from. So the name comes out of the token in the BREAK text's
+lettering and style - the same carved face, dark stroke and shadow - and bursts
+in at nearly twice its size before it lands, then rises and fades.
+
+It is quieter than BREAK on purpose. It is smaller, sized to the token, does
+not crack, and its colour is the character's anima tinted towards light rather
+than break red, since a Charm is theirs rather than something done to them.
+Several Charms come out a quarter of a second apart, each above the last, so a
+stack of techniques reads as a sequence rather than a block of text.
+
+A decisive attack names its Charms at the token when the dice are rolled and
+again in the cut-in if it lands. The first is the declaration, the second the
+payoff.
 
 ## Checking it
 

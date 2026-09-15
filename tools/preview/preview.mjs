@@ -8,7 +8,8 @@ const {
   TurnPanel, shardLayout, shatterFrame, drawShatter, seedFor, BREAK_COLORS,
   createBreakText, BREAK_TEXT_DURATION, cutInMarkup,
   emberLayout, flareFrame, drawFlare, flareCaptionMarkup,
-  FLARE_EMBERS, FLARE_EMBERS_GENTLE, FLARE_DURATION, FLARE_DURATION_GENTLE
+  FLARE_EMBERS, FLARE_EMBERS_GENTLE, FLARE_DURATION, FLARE_DURATION_GENTLE,
+  breakTextStyle, calloutLines, calloutLayout, calloutSize, CALLOUT_DURATION, CALLOUT_STAGGER
 } = panel;
 
 const theme = new URLSearchParams(location.search).get("theme") === "light"
@@ -258,5 +259,57 @@ function flareCaptionFrame(caption, { at, gentle = false } = {}) {
 flareCaptionFrame("caption and edge glow, 300 ms", { at: 300 });
 flareCaptionFrame("caption, 1200 ms", { at: 1200 });
 flareCaptionFrame("photosensitive or reduced motion, 1200 ms", { at: 1200, gentle: true });
+
+/* ----------------------------- Charm callouts ----------------------------- */
+
+// Invented Charm names, as for the cut-in.
+const calledOut = calloutLines(["Tidebreaker Blade", "Crest of the Ninth Wave", "Undertow Grip"]);
+const calloutMoments = [60, 300, 700, 1200, 1900];
+const calloutCell = 230;
+const calloutApp = new PIXI.Application({
+  width: calloutCell * (calloutMoments.length + 2), height: 260, backgroundColor: 0x2f332c, antialias: true
+});
+document.getElementById("callouts").append(calloutApp.view);
+
+function calloutStage(x, caption, { gentle = false } = {}) {
+  const disc = new PIXI.Graphics();
+  disc.beginFill(0x5d574c).drawCircle(0, 0, radius * 0.9).endFill();
+  disc.lineStyle(3, 0xd8d2c0, 0.8).drawCircle(0, 0, radius * 0.9);
+  disc.position.set(x, 200);
+  calloutApp.stage.addChild(disc);
+
+  const size = calloutSize(radius);
+  const style = breakTextStyle(PIXI, size);
+  const holder = new PIXI.Container();
+  holder.position.set(x, 200);
+  const labels = calledOut.map((line) => {
+    const text = holder.addChild(new PIXI.Text(line, style));
+    text.anchor.set(0.5, 1);
+    return text;
+  });
+  calloutApp.stage.addChild(holder);
+
+  const label = new PIXI.Text(caption, { fill: 0xdad6c8, fontSize: 13, fontFamily: "Signika" });
+  label.anchor.set(0.5, 0);
+  label.position.set(x, 236);
+  calloutApp.stage.addChild(label);
+
+  return (ms) => {
+    const layout = calloutLayout(ms, labels.length, { gentle, radius, size, hue: 0x2E8BFF });
+    labels.forEach((text, i) => {
+      text.alpha = layout[i].alpha;
+      text.scale.set(layout[i].scale);
+      text.tint = layout[i].tint;
+      text.position.set(layout[i].x, layout[i].y);
+    });
+  };
+}
+
+calloutMoments.forEach((ms, i) => calloutStage(calloutCell / 2 + i * calloutCell, `${ms} ms`)(ms));
+calloutStage(calloutCell / 2 + calloutMoments.length * calloutCell, "photosensitive, 1100 ms", { gentle: true })(1100);
+const liveCallout = calloutStage(calloutCell / 2 + (calloutMoments.length + 1) * calloutCell, "live");
+const calloutStarted = performance.now();
+const calloutLoop = CALLOUT_DURATION + (calledOut.length - 1) * CALLOUT_STAGGER + 700;
+calloutApp.ticker.add(() => liveCallout((performance.now() - calloutStarted) % calloutLoop));
 
 window.previewReady = true;
