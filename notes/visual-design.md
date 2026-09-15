@@ -100,6 +100,12 @@ DECISIVE slams down from twice its size, the Charms behind the strike are
 listed underneath, and the band carries on out to the right. Speed lines run
 behind it and one flash marks the impact.
 
+Its text started out capped at 34, 150 and 24 pixels for the name, the word
+and the Charms, and the table wanted it bigger, as with BREAK and the callouts.
+They now reach 52, 220 and 38 pixels, in a taller band with a slightly
+narrower portrait, measured to fit from the preview's small frame up to a
+1920 by 1080 screen.
+
 The band is the attacker's anima colour, from their sheet, so each Exalt's
 strike looks like theirs. The system's default anima colour is white, which is
 no colour at all on a band of light, so near-white falls back to orichalcum -

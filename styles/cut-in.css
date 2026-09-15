@@ -65,7 +65,7 @@
   position: relative;
   box-sizing: border-box;
   width: 120cqw;
-  height: clamp(110px, 34cqh, 320px);
+  height: clamp(130px, 40cqh, 440px);
   display: flex;
   align-items: center;
   gap: 2.5cqw;
@@ -92,7 +92,7 @@
 
 .epb-cutin-portrait {
   flex: none;
-  height: 130%;
+  height: 120%;
   aspect-ratio: 1;
   object-fit: cover;
   object-position: 50% 20%;
@@ -111,15 +111,16 @@
   text-shadow: 0 0 1.6cqw var(--epb-cutin-color), 0 0.4cqh 0 var(--epb-cutin-ink);
 }
 
+/* The table asked for bigger text: these first capped at 34, 150 and 24px. */
 .epb-cutin-name {
-  font-size: clamp(14px, 2.6cqw, 34px);
+  font-size: clamp(18px, 3.4cqw, 52px);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   opacity: 0.92;
 }
 
 .epb-cutin-word {
-  font-size: clamp(38px, 10cqw, 150px);
+  font-size: clamp(48px, 12cqw, 220px);
   letter-spacing: 0.03em;
   text-transform: uppercase;
   transform-origin: left center;
@@ -135,9 +136,9 @@
   gap: 0.15em 1.1em;
   /* Where the text starts, plus this, stays inside the screen from a small
      frame up to a wide monitor. */
-  max-width: 44cqw;
+  max-width: 50cqw;
   font-family: "Signika", sans-serif;
-  font-size: clamp(12px, 1.7cqw, 24px);
+  font-size: clamp(16px, 2.4cqw, 38px);
   font-weight: 600;
   line-height: 1.2;
   text-shadow: 0 1px 2px var(--epb-cutin-ink), 0 0 0.8cqw var(--epb-cutin-ink);
