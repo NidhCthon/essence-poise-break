@@ -1,11 +1,12 @@
-// Render the panel in each state it has, and the Break effect frame by frame,
-// using the module's own code under the same stubbed Foundry the tests use.
+// Render the panel in each state it has, and the Break effect and the decisive
+// cut-in frame by frame, using the module's own code under the same stubbed
+// Foundry the tests use.
 // Serve with tools/preview/serve.py.
 import { panel, settings, target } from "../../tests/foundry.mjs";
 
 const {
   TurnPanel, shardLayout, shatterFrame, drawShatter, seedFor, BREAK_COLORS,
-  createBreakText, BREAK_TEXT_DURATION
+  createBreakText, BREAK_TEXT_DURATION, cutInMarkup
 } = panel;
 
 const theme = new URLSearchParams(location.search).get("theme") === "light"
@@ -152,5 +153,43 @@ document.getElementById("replay").addEventListener("click", () => {
   broke.innerHTML = brokeHtml;
   started = performance.now();
 });
+
+/* --------------------------- Decisive cut-in --------------------------- */
+
+// An invented attacker with invented Charm names, and a plain drawn portrait.
+const portrait = "data:image/svg+xml," + encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+    <circle cx="100" cy="74" r="40" fill="#d9c3a0"/>
+    <path d="M22 200c8-62 40-92 78-92s70 30 78 92z" fill="#27507a"/>
+    <path d="M58 70c0-34 20-52 42-52s42 18 42 52c-10-16-24-24-42-24s-32 8-42 24z" fill="#1b1a22"/>
+  </svg>`);
+const attacker = {
+  name: "Rising Tide", img: portrait, color: "#2E8BFF",
+  charms: ["Tidebreaker Blade", "Crest of the Ninth Wave", "Undertow Grip", "Salt-Wind Stance"]
+};
+
+function cutInFrame(caption, { at = null, gentle = false, charms = attacker.charms } = {}) {
+  const wrap = document.createElement("div");
+  wrap.innerHTML = `<p class="preview-caption">${caption}</p><div class="preview-cutin"></div>`;
+  document.getElementById("cutin").append(wrap);
+  const stageElement = wrap.querySelector(".preview-cutin");
+  const draw = () => {
+    stageElement.innerHTML = cutInMarkup(attacker, { charms, gentle });
+    if (at === null) return;
+    // Frozen at one moment: each animation paused and moved to that time.
+    for (const animation of stageElement.getAnimations({ subtree: true })) {
+      animation.pause();
+      animation.currentTime = at;
+    }
+  };
+  draw();
+  return draw;
+}
+
+for (const ms of [120, 330, 800, 1450]) cutInFrame(`${ms} ms`, { at: ms });
+cutInFrame("photosensitive or reduced motion, 900 ms", { at: 900, gentle: true });
+cutInFrame("an antagonist's, Charms kept from players, 800 ms", { at: 800, charms: [] });
+const replayCutIn = cutInFrame("live");
+document.getElementById("replay-cutin").addEventListener("click", replayCutIn);
 
 window.previewReady = true;

@@ -11,6 +11,10 @@ say what a roll needs before the roller runs:
   roller with a gambit already chosen, and the roller recomputes the cost only
   when the choice *changes* - so the panel's number is the one that is spent.
 
+* The decisive cut-in wraps `attackSequence()`, calls a decisive attack a hit
+  the way the roller does (accuracy less Defense), and takes the Charms from
+  `addedCharms`. If any of those move, the cut-in stops playing without a word.
+
 That duplication is deliberate, but it means the module can fall out of step
 when the system changes.
 
@@ -62,6 +66,17 @@ SOCIAL_ANCHOR = "_socialInfluence() {"
 SOCIAL_SOURCE = re.compile(
     r"^.*this\.object\.resolve\s*=\s*this\.object\.target\.actor"
     r"\.system\.resolve\.value.*$", re.M)
+
+# What the decisive cut-in relies on: the attack-animation step it wraps, the
+# call to it at the end of a damage roll, the roller's test for a hit, and the
+# list the Charms added to a roll are kept in. Every copy of each is taken.
+CUTIN_LINES = [
+    re.compile(r"^\s*attackSequence\(\)\s*\{\s*$", re.M),
+    re.compile(r"^.*\bthis\.attackSequence\(\);.*$", re.M),
+    re.compile(r"^.*let postDefenseTotal = this\.object\.accuracyResult"
+               r" - this\.object\.defense;.*$", re.M),
+    re.compile(r"^.*this\.object\.addedCharms\.push\(item\);.*$", re.M),
+]
 
 
 def fetch(url):
@@ -129,6 +144,14 @@ def extract(source):
         return None
     blocks["gambits"] = normalise(gambits)
 
+    cutin = []
+    for pattern in CUTIN_LINES:
+        found = pattern.findall(source)
+        if not found:
+            return None
+        cutin.extend(found)
+    blocks["cutin"] = normalise("\n".join(cutin))
+
     return blocks
 
 
@@ -187,7 +210,9 @@ def main():
     what = {"conditions": "targetNumbers() in scripts/turn-panel.js",
             "defence": "the baseDefense branch in targetNumbers()",
             "social": "socialNumbers() and the social block",
-            "gambits": "the GAMBITS table in scripts/turn-panel.js"}
+            "gambits": "the GAMBITS table in scripts/turn-panel.js",
+            "cutin": "isDecisiveHit(), cutInPayload() and wrapAttackSequence() "
+                     "in scripts/turn-panel.js"}
     changed = [name for name in blocks
                if expected["blocks"].get(name, {}).get("sha256")
                != digests[name]]

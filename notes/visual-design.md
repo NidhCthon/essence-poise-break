@@ -67,18 +67,43 @@ including "-(Break)" as Break ends, is left exactly as Foundry draws it.
 
 ## Motion
 
-There are two moments, and nothing else moves:
+There are three moments, and nothing else moves:
 
 - **The panel's crack.** Only the render that first finds a target in Break
   marks it (`data-just-broke`), so the shards crack once, not on every refresh.
 - **The map shatter.** About a second long. The ring arrives with the crack,
   not before it. The colour passes jade, then light, then red, because a straight
   blend from jade to red goes through a dull grey-brown halfway.
+- **The decisive cut-in.** About a second and a half, across the whole screen.
+  See below.
 
 Foundry's photosensitive mode turns off the panel's crack and reduces the map
 effect to a slow, faint ring. The browser's reduced-motion preference turns the
 panel's animation off entirely. On the map, `Token#isVisible` decides who sees
 the shatter, so it never reveals a token a player can't see.
+
+## The decisive cut-in
+
+BREAK happens to the target, at the token. A decisive hit is the attacker's
+moment, so it takes the screen, briefly, the way a super move cuts in: a band
+slashes in from the left at a tilt, the portrait breaks out of its top edge,
+DECISIVE slams down from twice its size, the Charms behind the strike are
+listed underneath, and the band carries on out to the right. Speed lines run
+behind it and one flash marks the impact.
+
+The band is the attacker's anima colour, from their sheet, so each Exalt's
+strike looks like theirs. The system's default anima colour is white, which is
+no colour at all on a band of light, so near-white falls back to orichalcum -
+the colour this module already gives decisive attacks.
+
+It is drawn in the page, not on the canvas. It belongs to the screen rather
+than a place on the map, page text stays sharp at any size, and it sits above
+the interface without ever taking a click. Its sizes are container units of the
+cut-in itself, so the preview's small frame and a full screen share one set of
+rules.
+
+Photosensitive mode and reduced motion get a fade where the band rests: no
+flash, no speed lines, no slam.
 
 ## Checking it
 

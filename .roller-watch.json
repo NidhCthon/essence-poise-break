@@ -16,6 +16,10 @@
     "gambits": {
       "sha256": "2ae3fbaf0b3b66ba99004fc8717507f2bc07cbdfeac9dd6903706c55ca8188af",
       "block": "const gambitCosts = { '': 0, 'disarm': this.object.defense, 'distract': 2, 'ensnare': 3, 'knockback': 4, 'knockdown': 4, 'pilfer': 3, 'pull': 4, 'reveal_weakness': 3, 'unhorse': 5, }"
+    },
+    "cutin": {
+      "sha256": "883ca053a4ce751ff2e94698906e334aabf7ca1ad45c15b68d66dacb8625139a",
+      "block": "attackSequence() { this.attackSequence(); let postDefenseTotal = this.object.accuracyResult - this.object.defense; let postDefenseTotal = this.object.accuracyResult - this.object.defense; this.object.addedCharms.push(item);"
     }
   }
 }

@@ -8,6 +8,7 @@
      less like Foundry. -->
 <link rel="stylesheet" href=".foundry/css/foundry2.css">
 <link rel="stylesheet" href="../../styles/turn-panel.css">
+<link rel="stylesheet" href="../../styles/cut-in.css">
 <style>
   html, body { height: auto !important; overflow: auto !important; }
   body { margin: 0; padding: 24px; background: #0c0b11; color: #e8e6df; font-family: "Signika", sans-serif; }
@@ -19,6 +20,7 @@
   .preview-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
   .preview-bar a, .preview-bar button { color: inherit; font: inherit; font-size: 13px; }
   canvas { border-radius: 6px; display: block; }
+  .preview-cutin { position: relative; width: 520px; height: 260px; overflow: hidden; border-radius: 6px; background: #2f332c; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.3/dist/pixi.min.js"></script>
 </head>
@@ -26,11 +28,14 @@
   <div class="preview-bar">
     <a href="?theme=dark">Dark</a> · <a href="?theme=light">Light</a>
     <button type="button" id="replay">Replay the Break</button>
+    <button type="button" id="replay-cutin">Replay the cut-in</button>
   </div>
   <h1 class="preview-title">Panel</h1>
   <div class="preview-row" id="panels"></div>
   <h1 class="preview-title">Break effect</h1>
   <div class="preview-row" id="effect"></div>
+  <h1 class="preview-title">Decisive cut-in</h1>
+  <div class="preview-row" id="cutin"></div>
   <script type="module" src="preview.mjs"></script>
 </body>
 </html>

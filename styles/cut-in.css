@@ -1,0 +1,233 @@
+/* Poise & Break — the decisive cut-in
+
+   When a decisive attack lands, the attacker cuts in across the screen: a
+   slanted band in their anima colour, their portrait breaking out of it, the
+   word DECISIVE slamming down, and the Charms that powered the strike, over
+   speed lines. It is drawn in the page rather than on the canvas, above
+   everything and never in the way of a click, and gone in under two seconds.
+
+   Sizes are container units of the cut-in itself, so the same rules fill a
+   screen in Foundry and a small frame in the preview. Every animation here
+   runs for CUT_IN_DURATION (1600ms), or CUT_IN_DURATION_GENTLE (2200ms) for
+   the gentle version, in scripts/turn-panel.js. */
+
+.epb-cutin-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.epb-cutin {
+  --epb-cutin-color: #E5B356;
+  --epb-cutin-ink: #0B0907;
+  --epb-cutin-ease: cubic-bezier(0.2, 0.9, 0.25, 1);
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  font-family: "Modesto Condensed", "Signika", sans-serif;
+  color: #FFFFFF;
+}
+
+/* One flash, as the band lands. */
+.epb-cutin::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 40% 50%,
+    #FFFFFF 0%,
+    color-mix(in srgb, var(--epb-cutin-color) 55%, #FFFFFF) 28%,
+    transparent 68%);
+  opacity: 0;
+  animation: epb-cutin-flash 1600ms ease-out both;
+}
+
+/* Speed lines behind the band, running the way it travels. */
+.epb-cutin-lines {
+  position: absolute;
+  inset: -25%;
+  background: repeating-linear-gradient(96deg,
+    transparent 0 2.2cqw,
+    color-mix(in srgb, var(--epb-cutin-color) 55%, transparent) 2.2cqw 2.45cqw,
+    transparent 2.45cqw 5.4cqw,
+    rgba(255, 255, 255, 0.32) 5.4cqw 5.55cqw,
+    transparent 5.55cqw 9cqw);
+  opacity: 0;
+  animation: epb-cutin-lines 1600ms linear both;
+}
+
+.epb-cutin-band {
+  position: relative;
+  box-sizing: border-box;
+  width: 120cqw;
+  height: clamp(110px, 34cqh, 320px);
+  display: flex;
+  align-items: center;
+  gap: 2.5cqw;
+  padding-left: 12cqw;
+  transform: rotate(-6deg);
+  animation: epb-cutin-band 1600ms var(--epb-cutin-ease) both;
+}
+
+/* The band's colour sits behind it, so the portrait can break out of the top. */
+.epb-cutin-band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 40%),
+    linear-gradient(90deg,
+      var(--epb-cutin-ink) 0%,
+      color-mix(in srgb, var(--epb-cutin-color) 78%, var(--epb-cutin-ink)) 32%,
+      var(--epb-cutin-color) 58%,
+      var(--epb-cutin-ink) 100%);
+  clip-path: polygon(0 16%, 100% 0, 100% 84%, 0 100%);
+}
+
+.epb-cutin-portrait {
+  flex: none;
+  height: 130%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  object-position: 50% 20%;
+  align-self: flex-end;
+  -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent);
+  mask-image: linear-gradient(180deg, #000 70%, transparent);
+  filter: drop-shadow(0 0 1.2cqw var(--epb-cutin-color));
+  animation: epb-cutin-portrait 1600ms var(--epb-cutin-ease) both;
+}
+
+.epb-cutin-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 0.88;
+  text-shadow: 0 0 1.6cqw var(--epb-cutin-color), 0 0.4cqh 0 var(--epb-cutin-ink);
+}
+
+.epb-cutin-name {
+  font-size: clamp(14px, 2.6cqw, 34px);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.92;
+}
+
+.epb-cutin-word {
+  font-size: clamp(38px, 10cqw, 150px);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transform-origin: left center;
+  animation: epb-cutin-word 1600ms var(--epb-cutin-ease) both;
+}
+
+.epb-cutin-charms {
+  list-style: none;
+  margin: 0.5em 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15em 1.1em;
+  /* Where the text starts, plus this, stays inside the screen from a small
+     frame up to a wide monitor. */
+  max-width: 44cqw;
+  font-family: "Signika", sans-serif;
+  font-size: clamp(12px, 1.7cqw, 24px);
+  font-weight: 600;
+  line-height: 1.2;
+  text-shadow: 0 1px 2px var(--epb-cutin-ink), 0 0 0.8cqw var(--epb-cutin-ink);
+}
+
+.epb-cutin-charms li::before {
+  content: "\25C6\00A0";
+  color: color-mix(in srgb, var(--epb-cutin-color) 45%, #FFFFFF);
+}
+
+.epb-cutin-charms .epb-cutin-more {
+  opacity: 0.8;
+}
+
+.epb-cutin-charms .epb-cutin-more::before {
+  content: none;
+}
+
+@keyframes epb-cutin-band {
+  0%   { transform: translateX(-120%) rotate(-6deg) skewX(-14deg); }
+  14%  { transform: translateX(3%) rotate(-6deg) skewX(-4deg); }
+  20%  { transform: translateX(0) rotate(-6deg) skewX(0); }
+  76%  { transform: translateX(-2%) rotate(-6deg) skewX(0); }
+  100% { transform: translateX(125%) rotate(-6deg) skewX(10deg); }
+}
+
+@keyframes epb-cutin-portrait {
+  0%, 8% { transform: translateX(-25%); opacity: 0; }
+  24%    { transform: translateX(0); opacity: 1; }
+  76%    { transform: translateX(4%); opacity: 1; }
+  100%   { transform: translateX(8%); opacity: 1; }
+}
+
+@keyframes epb-cutin-word {
+  0%, 12% { transform: scale(2.1); opacity: 0; }
+  22%     { transform: scale(0.94); opacity: 1; }
+  28%     { transform: scale(1.03); opacity: 1; }
+  34%     { transform: scale(1); opacity: 1; }
+  100%    { transform: scale(1); opacity: 1; }
+}
+
+@keyframes epb-cutin-lines {
+  0%   { transform: rotate(-8deg) translateX(0); opacity: 0; }
+  12%  { opacity: 0.85; }
+  78%  { opacity: 0.7; }
+  100% { transform: rotate(-8deg) translateX(-18cqw); opacity: 0; }
+}
+
+@keyframes epb-cutin-flash {
+  0%, 17% { opacity: 0; }
+  21%     { opacity: 0.55; }
+  36%     { opacity: 0; }
+  100%    { opacity: 0; }
+}
+
+/* Photosensitive mode and reduced motion: no flash, no speed lines, no slam.
+   The band fades in where it rests, holds, and fades out. */
+@keyframes epb-cutin-fade {
+  0%   { opacity: 0; }
+  18%  { opacity: 1; }
+  78%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.epb-cutin[data-gentle="true"]::after,
+.epb-cutin[data-gentle="true"] .epb-cutin-lines {
+  display: none;
+}
+
+.epb-cutin[data-gentle="true"] .epb-cutin-band {
+  animation: epb-cutin-fade 2200ms ease-in-out both;
+}
+
+.epb-cutin[data-gentle="true"] .epb-cutin-portrait,
+.epb-cutin[data-gentle="true"] .epb-cutin-word {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .epb-cutin::after,
+  .epb-cutin .epb-cutin-lines {
+    display: none;
+  }
+
+  .epb-cutin .epb-cutin-band {
+    animation: epb-cutin-fade 2200ms ease-in-out both;
+  }
+
+  .epb-cutin .epb-cutin-portrait,
+  .epb-cutin .epb-cutin-word {
+    animation: none;
+  }
+}

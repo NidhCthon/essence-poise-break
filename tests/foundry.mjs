@@ -11,6 +11,8 @@ export const settings = new Map([
   ["essence-poise-break.controlSpells", false],
   ["essence-poise-break.clearGambitEffects", true],
   ["essence-poise-break.breakEffect", true],
+  ["essence-poise-break.decisiveCutIn", true],
+  ["essence-poise-break.revealStorytellerCharms", false],
   ["essence-poise-break.autoOpen", true]
 ]);
 

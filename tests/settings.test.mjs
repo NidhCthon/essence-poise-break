@@ -39,3 +39,13 @@ test("the Break effect is each player's own choice, on unless they turn it off",
   assert.equal(byKey.breakEffect.scope, "client");
   assert.equal(byKey.breakEffect.default, true);
 });
+
+test("the decisive cut-in is each player's own choice, on unless they turn it off", () => {
+  assert.equal(byKey.decisiveCutIn.scope, "client");
+  assert.equal(byKey.decisiveCutIn.default, true);
+});
+
+test("naming the Storyteller's Charms in the cut-in is the table's call, off by default", () => {
+  assert.equal(byKey.revealStorytellerCharms.scope, "world");
+  assert.equal(byKey.revealStorytellerCharms.default, false);
+});

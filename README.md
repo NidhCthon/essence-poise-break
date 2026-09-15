@@ -125,6 +125,26 @@ To open it by hand, make a macro:
 game.modules.get("essence-poise-break").api.open();
 ```
 
+## The decisive cut-in
+
+When a decisive attack lands, the attacker cuts in across everyone's screen: a
+slanted band in their anima colour, their portrait breaking out of it, the word
+DECISIVE, and the Charms they put into the strike, over speed lines. It lasts
+about a second and a half and never takes a click.
+
+- It plays for any decisive hit rolled through the system's roller — from the
+  panel, the character sheet or a hotbar macro. A miss plays nothing.
+- The colour is the **Anima Color** on the character's sheet. Left at the
+  system's default of white, the band is orichalcum instead.
+- Each player sees it only for an attacker they can see on the map. For an
+  attacker on another scene, it shows to that character's owners and the
+  Storyteller.
+- An antagonist's cut-in keeps its Charms from the players unless the
+  Storyteller turns on **Name the Storyteller's Charms in the cut-in**.
+- With Foundry's photosensitive mode or the browser's reduced-motion setting,
+  it fades in and out with no flash, speed lines or slam. Each player can turn
+  it off with **Show the decisive cut-in**.
+
 ## How it hooks in
 
 Casting is not a roll type of its own. In Essence you spend the spell's Will,
@@ -147,6 +167,14 @@ status is enough.
 The panel re-renders when you change target, when Break is applied or removed,
 and when Power or Poise changes.
 
+The decisive cut-in is the one place the module wraps the roller. The Charms
+added to a roll live only in the rolling client's roller — nothing about them
+reaches the chat card — so `RollForm#attackSequence`, the system's own
+attack-animation step at the end of a damage roll, is wrapped. It runs first
+and unchanged; then, if the roll was a decisive hit, the module plays the
+cut-in and sends it to every other client over its socket. Anything that goes
+wrong there is caught and logged, so it can never break a roll.
+
 ## Staying in step with the system
 
 `targetNumbers()` mirrors the modifiers the system's roller applies to a target
@@ -162,8 +190,9 @@ drifts, so four things watch for it:
   says so if they differ, naming both numbers. Purely diagnostic, and wrapped so
   a broken check can never break a roll.
 - **A weekly job watches the system's source.** `tools/check-roller.py` extracts
-  the roller's condition block, its Defense branch, its social block and its
-  gambit cost table, and compares each with the fingerprint in
+  the roller's condition block, its Defense branch, its social block, its
+  gambit cost table and the lines the decisive cut-in reads, and compares each
+  with the fingerprint in
   `.roller-watch.json`. It also compares the system's latest release with the
   version the panel was verified against. Either change fails the run, so you
   hear about it before a session rather than during one.
@@ -182,8 +211,8 @@ disagreed; correct `targetNumbers()`, then re-record with
 ## Previewing changes
 
 `tools/preview/` renders the panel in every state, in both the dark and light
-themes, and the Break effect frame by frame, all from the module's own code
-under the same stubbed Foundry the tests use.
+themes, and the Break effect and the decisive cut-in frame by frame, all from
+the module's own code under the same stubbed Foundry the tests use.
 
 ```bash
 python tools/preview/serve.py
@@ -212,6 +241,9 @@ renders, in fallback fonts.
   tokens — the penalty goes with it.
 - **The Break effect plays on the scene you are viewing.** A token that Breaks
   on another scene shows nothing when you get there.
+- **The cut-in needs every client on this version, after a restart.** It
+  travels over the module's socket, which Foundry opens only when it loads a
+  manifest that asks for one.
 - **Only combatants are swept.** A gambit against a token that isn't in the
   combat tracker keeps its effect until someone removes it.
 - `game.exaltedessence` is the system's macro API rather than a documented one.
