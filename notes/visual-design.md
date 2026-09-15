@@ -67,7 +67,7 @@ including "-(Break)" as Break ends, is left exactly as Foundry draws it.
 
 ## Motion
 
-There are three moments, and nothing else moves:
+There are four moments, and nothing else moves:
 
 - **The panel's crack.** Only the render that first finds a target in Break
   marks it (`data-just-broke`), so the shards crack once, not on every refresh.
@@ -76,6 +76,8 @@ There are three moments, and nothing else moves:
   blend from jade to red goes through a dull grey-brown halfway.
 - **The decisive cut-in.** About a second and a half, across the whole screen.
   See below.
+- **The anima flare.** A little over two seconds, at the token, with a caption
+  and an edge glow on screen. See below.
 
 Foundry's photosensitive mode turns off the panel's crack and reduces the map
 effect to a slow, faint ring. The browser's reduced-motion preference turns the
@@ -104,6 +106,26 @@ rules.
 
 Photosensitive mode and reduced motion get a fade where the band rests: no
 flash, no speed lines, no slam.
+
+## The anima flare
+
+Anima is the Exalt made visible, and Bonfire is when it can no longer be
+hidden. So the flare happens where the character stands: a column of light in
+their anima colour shoots up out of the token, a white-hot core inside a
+coloured sheath, a ring bursts out at its foot, and embers rise through it. It
+is drawn in added light, so it brightens the map under it rather than covering
+it.
+
+It is drawn with plain PIXI shapes rather than textures - stacked bands that
+thin and fade towards the top - so it needs nothing loaded and can be tested
+and previewed on its own, like the shatter.
+
+The screen gets two things. A glow runs round its edges as the column erupts,
+and a caption names the level and the character, with the first sentence of a
+player character's iconic anima: the thing everyone at the table would see.
+
+Photosensitive mode and reduced motion get a slow, faint column with no ring,
+no flicker and no glow round the edges, and a caption that only fades.
 
 ## Checking it
 

@@ -49,3 +49,8 @@ test("naming the Storyteller's Charms in the cut-in is the table's call, off by 
   assert.equal(byKey.revealStorytellerCharms.scope, "world");
   assert.equal(byKey.revealStorytellerCharms.default, false);
 });
+
+test("the anima flare is each player's own choice, on unless they turn it off", () => {
+  assert.equal(byKey.animaFlare.scope, "client");
+  assert.equal(byKey.animaFlare.default, true);
+});

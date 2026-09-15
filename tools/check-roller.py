@@ -14,6 +14,9 @@ say what a roll needs before the roller runs:
 * The decisive cut-in wraps `attackSequence()`, calls a decisive attack a hit
   the way the roller does (accuracy less Defense), and takes the Charms from
   `addedCharms`. If any of those move, the cut-in stops playing without a word.
+* The anima flare plays on the step into the `bonfire` or `iconic` anima
+  level, which the actor - not the roller - works out. That block is watched
+  in the actor's source.
 
 That duplication is deliberate, but it means the module can fall out of step
 when the system changes.
@@ -42,6 +45,11 @@ SOURCE = ("https://raw.githubusercontent.com/Aliharu/Foundry-ExEss/master/"
 BASELINE = Path(__file__).resolve().parent.parent / ".roller-watch.json"
 SYSTEM_JSON = ("https://raw.githubusercontent.com/Aliharu/Foundry-ExEss/master/"
                "system.json")
+ACTOR_SOURCE = ("https://raw.githubusercontent.com/Aliharu/Foundry-ExEss/master/"
+                "module/actor/actor.js")
+# Where the actor turns an anima value into its level: the names the flare
+# plays on, and the values each is reached at.
+ANIMA_ANCHOR = "_prepareBaseActorData(system) {"
 PANEL = Path(__file__).resolve().parent.parent / "scripts" / "turn-panel.js"
 VERIFIED = re.compile(r'const VERIFIED_SYSTEM = "([^"]+)"')
 
@@ -183,6 +191,14 @@ def main():
         print(SOURCE)
         return 1
 
+    anima = braced_block(fetch(ACTOR_SOURCE), ANIMA_ANCHOR)
+    if anima is None:
+        print("FAIL: could not find where the actor works out its anima level.")
+        print("Check animaRank() and the anima flare by hand.")
+        print(ACTOR_SOURCE)
+        return 1
+    blocks["anima"] = normalise(anima)
+
     digests = {name: hashlib.sha256(text.encode("utf-8")).hexdigest()
                for name, text in blocks.items()}
 
@@ -212,7 +228,8 @@ def main():
             "social": "socialNumbers() and the social block",
             "gambits": "the GAMBITS table in scripts/turn-panel.js",
             "cutin": "isDecisiveHit(), cutInPayload() and wrapAttackSequence() "
-                     "in scripts/turn-panel.js"}
+                     "in scripts/turn-panel.js",
+            "anima": "animaRank() and crossesIntoFlare() in scripts/turn-panel.js"}
     changed = [name for name in blocks
                if expected["blocks"].get(name, {}).get("sha256")
                != digests[name]]

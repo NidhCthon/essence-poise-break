@@ -145,6 +145,23 @@ about a second and a half and never takes a click.
   it fades in and out with no flash, speed lines or slam. Each player can turn
   it off with **Show the decisive cut-in**.
 
+## The anima flare
+
+When a character's anima rises into **Bonfire** — or into **Iconic** — a column
+of light in their anima colour erupts from their token, a ring bursts out at its
+foot and embers rise through it. The screen's edges glow for a moment, and a
+caption names the level and the character, with the first line of a player
+character's iconic anima from their sheet.
+
+- It plays however the anima rose: the roller spending motes, the sheet, or the
+  token HUD. Rising again from Bonfire to Iconic plays it again.
+- Each player sees it only for a token they can see, on the scene they are
+  viewing. An antagonist's flare shows its name and level but keeps its iconic
+  anima text to the Storyteller.
+- With Foundry's photosensitive mode or reduced motion it is a slow, faint
+  column with no ring and no flash round the edges. Each player can turn it off
+  with **Show the anima flare**.
+
 ## How it hooks in
 
 Casting is not a roll type of its own. In Essence you spend the spell's Will,
@@ -175,6 +192,13 @@ and unchanged; then, if the roll was a decisive hit, the module plays the
 cut-in and sends it to every other client over its socket. Anything that goes
 wrong there is caught and logged, so it can never break a roll.
 
+The anima flare reads the anima level the system itself derives, rather than
+its thresholds. The client that makes a change to an actor notes the level in
+`preUpdateActor` and compares it in `updateActor`, once the system has
+recalculated it; if it rose into Bonfire or Iconic, that client plays the flare
+and sends it over the same socket. The `preUpdateActor` watcher never returns a
+value, because Foundry cancels an update when one of those returns `false`.
+
 ## Staying in step with the system
 
 `targetNumbers()` mirrors the modifiers the system's roller applies to a target
@@ -191,8 +215,9 @@ drifts, so four things watch for it:
   a broken check can never break a roll.
 - **A weekly job watches the system's source.** `tools/check-roller.py` extracts
   the roller's condition block, its Defense branch, its social block, its
-  gambit cost table and the lines the decisive cut-in reads, and compares each
-  with the fingerprint in
+  gambit cost table and the lines the decisive cut-in reads — plus, from the
+  actor, where anima levels are worked out — and compares each with the
+  fingerprint in
   `.roller-watch.json`. It also compares the system's latest release with the
   version the panel was verified against. Either change fails the run, so you
   hear about it before a session rather than during one.
@@ -211,8 +236,9 @@ disagreed; correct `targetNumbers()`, then re-record with
 ## Previewing changes
 
 `tools/preview/` renders the panel in every state, in both the dark and light
-themes, and the Break effect and the decisive cut-in frame by frame, all from
-the module's own code under the same stubbed Foundry the tests use.
+themes, and the Break effect, the decisive cut-in and the anima flare frame by
+frame, all from the module's own code under the same stubbed Foundry the tests
+use.
 
 ```bash
 python tools/preview/serve.py
@@ -244,6 +270,9 @@ renders, in fallback fonts.
 - **The cut-in needs every client on this version, after a restart.** It
   travels over the module's socket, which Foundry opens only when it loads a
   manifest that asks for one.
+- **The flare needs a token to erupt from, where the change was made.** A
+  character's anima raised by someone viewing a scene without that
+  character's token on it plays no flare.
 - **Only combatants are swept.** A gambit against a token that isn't in the
   combat tracker keeps its effect until someone removes it.
 - `game.exaltedessence` is the system's macro API rather than a documented one.

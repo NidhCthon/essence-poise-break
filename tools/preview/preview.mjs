@@ -1,12 +1,14 @@
-// Render the panel in each state it has, and the Break effect and the decisive
-// cut-in frame by frame, using the module's own code under the same stubbed
-// Foundry the tests use.
+// Render the panel in each state it has, and the Break effect, the decisive
+// cut-in and the anima flare frame by frame, using the module's own code under
+// the same stubbed Foundry the tests use.
 // Serve with tools/preview/serve.py.
 import { panel, settings, target } from "../../tests/foundry.mjs";
 
 const {
   TurnPanel, shardLayout, shatterFrame, drawShatter, seedFor, BREAK_COLORS,
-  createBreakText, BREAK_TEXT_DURATION, cutInMarkup
+  createBreakText, BREAK_TEXT_DURATION, cutInMarkup,
+  emberLayout, flareFrame, drawFlare, flareCaptionMarkup,
+  FLARE_EMBERS, FLARE_EMBERS_GENTLE, FLARE_DURATION, FLARE_DURATION_GENTLE
 } = panel;
 
 const theme = new URLSearchParams(location.search).get("theme") === "light"
@@ -191,5 +193,70 @@ cutInFrame("photosensitive or reduced motion, 900 ms", { at: 900, gentle: true }
 cutInFrame("an antagonist's, Charms kept from players, 800 ms", { at: 800, charms: [] });
 const replayCutIn = cutInFrame("live");
 document.getElementById("replay-cutin").addEventListener("click", replayCutIn);
+
+/* ------------------------------ Anima flare ------------------------------ */
+
+const flareMoments = [0, 180, 480, 1000, 1600];
+const flareApp = new PIXI.Application({
+  width: cell * (flareMoments.length + 2), height: 330, backgroundColor: 0x2f332c, antialias: true
+});
+document.getElementById("flare").append(flareApp.view);
+const flareColor = 0xFF6A1A;
+const flareRadius = radius * 0.6;
+
+function flareStage(x, caption, { gentle = false } = {}) {
+  const disc = new PIXI.Graphics();
+  disc.beginFill(0x5d574c).drawCircle(0, 0, flareRadius * 0.9).endFill();
+  disc.lineStyle(3, 0xd8d2c0, 0.8).drawCircle(0, 0, flareRadius * 0.9);
+  disc.position.set(x, 250);
+  flareApp.stage.addChild(disc);
+
+  const light = new PIXI.Graphics();
+  light.blendMode = PIXI.BLEND_MODES.ADD;
+  light.position.set(x, 250);
+  flareApp.stage.addChild(light);
+
+  const label = new PIXI.Text(caption, { fill: 0xdad6c8, fontSize: 13, fontFamily: "Signika" });
+  label.anchor.set(0.5, 0);
+  label.position.set(x, 300);
+  flareApp.stage.addChild(label);
+
+  const layout = emberLayout(gentle ? FLARE_EMBERS_GENTLE : FLARE_EMBERS, seedFor("preview-flare"));
+  return (ms) => drawFlare(
+    light, layout,
+    flareFrame(ms / (gentle ? FLARE_DURATION_GENTLE : FLARE_DURATION), { gentle }),
+    flareRadius, flareColor
+  );
+}
+
+flareMoments.forEach((ms, i) => flareStage(cell / 2 + i * cell, `${ms} ms`)(ms));
+flareStage(cell / 2 + flareMoments.length * cell, "photosensitive, 1200 ms", { gentle: true })(1200);
+const liveFlare = flareStage(cell / 2 + (flareMoments.length + 1) * cell, "live");
+let flareStarted = performance.now();
+flareApp.ticker.add(() => liveFlare((performance.now() - flareStarted) % (FLARE_DURATION + 600)));
+document.getElementById("replay-flare").addEventListener("click", () => {
+  flareStarted = performance.now();
+});
+
+// An invented character and iconic anima, nothing from the books.
+const riser = {
+  name: "Rising Tide", level: "bonfire", color: "#FF6A1A",
+  iconic: "A burning phoenix unfolds its wings above her."
+};
+
+function flareCaptionFrame(caption, { at, gentle = false } = {}) {
+  const wrap = document.createElement("div");
+  wrap.innerHTML = `<p class="preview-caption">${caption}</p>
+    <div class="preview-cutin">${flareCaptionMarkup(riser, { gentle })}</div>`;
+  document.getElementById("flare-caption").append(wrap);
+  for (const animation of wrap.querySelector(".preview-cutin").getAnimations({ subtree: true })) {
+    animation.pause();
+    animation.currentTime = at;
+  }
+}
+
+flareCaptionFrame("caption and edge glow, 300 ms", { at: 300 });
+flareCaptionFrame("caption, 1200 ms", { at: 1200 });
+flareCaptionFrame("photosensitive or reduced motion, 1200 ms", { at: 1200, gentle: true });
 
 window.previewReady = true;

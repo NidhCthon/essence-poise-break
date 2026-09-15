@@ -9,6 +9,7 @@
 <link rel="stylesheet" href=".foundry/css/foundry2.css">
 <link rel="stylesheet" href="../../styles/turn-panel.css">
 <link rel="stylesheet" href="../../styles/cut-in.css">
+<link rel="stylesheet" href="../../styles/anima-flare.css">
 <style>
   html, body { height: auto !important; overflow: auto !important; }
   body { margin: 0; padding: 24px; background: #0c0b11; color: #e8e6df; font-family: "Signika", sans-serif; }
@@ -29,6 +30,7 @@
     <a href="?theme=dark">Dark</a> · <a href="?theme=light">Light</a>
     <button type="button" id="replay">Replay the Break</button>
     <button type="button" id="replay-cutin">Replay the cut-in</button>
+    <button type="button" id="replay-flare">Replay the flare</button>
   </div>
   <h1 class="preview-title">Panel</h1>
   <div class="preview-row" id="panels"></div>
@@ -36,6 +38,9 @@
   <div class="preview-row" id="effect"></div>
   <h1 class="preview-title">Decisive cut-in</h1>
   <div class="preview-row" id="cutin"></div>
+  <h1 class="preview-title">Anima flare</h1>
+  <div class="preview-row" id="flare"></div>
+  <div class="preview-row" id="flare-caption"></div>
   <script type="module" src="preview.mjs"></script>
 </body>
 </html>
