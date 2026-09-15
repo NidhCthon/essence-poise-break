@@ -187,6 +187,14 @@ is a Storyteller's button in Module Settings that lists every sheet still on
 the default and fills them in when pressed. The rule is the same either way: a
 colour someone picked is never overwritten.
 
+An unlinked token keeps its own copy of the sheet inside the scene, and that
+copy is the one its anima glow reads, so the button offers those too, each
+named with its scene. A token and the actor it came from are two sheets and
+can both be in the list. The sidebar's actors are written in one update; a
+token's copy is written through the token's own actor, which is what keeps the
+colour in that token rather than spreading it to every other token from the
+same actor.
+
 ## Checking it
 
 `tools/preview/` renders every panel state in both themes, and the shatter frame

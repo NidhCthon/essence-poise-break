@@ -200,8 +200,10 @@ Only the module's effects use it. The system's own Token Magic anima glow reads
 the sheet's colour itself, so it stays white until one is picked there — or
 until the Storyteller presses **Fill in anima colours** in Module Settings.
 That window lists every sheet still on the default white with the colour
-matched for it, and writes them in one go when you press the button. A colour
-already picked is never touched, and nothing is written until you press it.
+matched for it — the actors in the sidebar, and the unlinked tokens on your
+scenes, which each keep their own copy of a sheet — and writes them when you
+press the button. A colour already picked is never touched, and nothing is
+written until you press it.
 
 ## How it hooks in
 

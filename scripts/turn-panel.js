@@ -1549,34 +1549,82 @@ function animaColorFor(actor) {
  */
 const FILL_LIST_MAX = 40;
 
-/** Sheets still on the default white, with the colour that fits each. */
-function animaColorPlan(actors) {
-  const list = actors ? [...actors] : [];
-  return list
-    .filter((actor) => actor?.system?.details
-      && !sheetAnimaColor(actor.system.details.animacolor))
-    .map((actor) => ({
-      id: actor.id ?? null,
-      name: typeof actor.name === "string" ? actor.name : "",
-      color: animaColorFor(actor)
-    }));
+/** Is this sheet still on the system's default white? */
+function needsAnimaColor(actor) {
+  return !!actor?.system?.details && !sheetAnimaColor(actor.system.details.animacolor);
 }
 
-/** That plan as Foundry document updates. */
+/** Sidebar actors still on the default white, with the colour that fits each. */
+function animaColorPlan(actors) {
+  const list = actors ? [...actors] : [];
+  return list.filter(needsAnimaColor).map((actor) => ({
+    kind: "actor",
+    id: actor.id ?? null,
+    name: typeof actor.name === "string" ? actor.name : "",
+    color: animaColorFor(actor)
+  }));
+}
+
+/**
+ * The same for unlinked tokens. Each keeps its own copy of the sheet inside
+ * the scene, and that copy is the one its anima glow reads, so a token and the
+ * actor it came from are two sheets and both are offered. A linked token uses
+ * the sidebar actor, which the plan above already has.
+ */
+function tokenAnimaColorPlan(scenes) {
+  const plan = [];
+  for (const scene of scenes ? [...scenes] : []) {
+    for (const token of scene?.tokens ? [...scene.tokens] : []) {
+      const linked = token?.actorLink ?? token?.isLinked ?? false;
+      const actor = token?.actor;
+      if (linked || !needsAnimaColor(actor)) continue;
+      plan.push({
+        kind: "token",
+        id: token.id ?? null,
+        name: typeof token.name === "string" ? token.name : (actor.name ?? ""),
+        scene: typeof scene.name === "string" ? scene.name : "",
+        color: animaColorFor(actor),
+        actor
+      });
+    }
+  }
+  return plan;
+}
+
+/** Everything the button would fill in: the sidebar first, then the scenes. */
+function fullAnimaColorPlan(actors, scenes) {
+  return [...animaColorPlan(actors), ...tokenAnimaColorPlan(scenes)];
+}
+
+/** The sidebar half of a plan, as Foundry document updates. */
 function animaColorUpdates(plan) {
   return (plan ?? [])
-    .filter((entry) => entry?.id)
+    .filter((entry) => entry?.id && entry.kind !== "token")
     .map((entry) => ({ _id: entry.id, "system.details.animacolor": cutInColor(entry.color) }));
 }
 
-/** Write the plan, in one update, and report how many sheets were filled in. */
-async function applyAnimaColors(plan, { update } = {}) {
-  const updates = animaColorUpdates(plan);
-  if (!updates.length) return 0;
-  const write = update
-    ?? ((documents) => getDocumentClass("Actor").updateDocuments(documents));
-  await write(updates);
-  return updates.length;
+/**
+ * Write the plan and report how many sheets were filled in. Sidebar actors go
+ * in one update; a token's own copy is written through its own actor, which is
+ * what puts the colour in that token rather than the one it came from.
+ */
+async function applyAnimaColors(plan, { update, updateActor } = {}) {
+  const list = plan ?? [];
+  const updates = animaColorUpdates(list);
+  let filled = 0;
+  if (updates.length) {
+    const write = update
+      ?? ((documents) => getDocumentClass("Actor").updateDocuments(documents));
+    await write(updates);
+    filled += updates.length;
+  }
+  const writeOne = updateActor ?? ((actor, data) => actor.update(data));
+  for (const entry of list) {
+    if (entry?.kind !== "token" || !entry.actor) continue;
+    await writeOne(entry.actor, { "system.details.animacolor": cutInColor(entry.color) });
+    filled += 1;
+  }
+  return filled;
 }
 
 /** What the window shows before anything is written. */
@@ -1588,10 +1636,13 @@ function animaColorPlanMarkup(plan) {
   }
   const rows = list.slice(0, FILL_LIST_MAX).map((entry) => {
     const color = cutInColor(entry.color);
+    const where = entry.kind === "token"
+      ? ` <span style="opacity:.7">token on ${esc(entry.scene)}</span>`
+      : "";
     return `<li style="display:flex;align-items:center;gap:8px;padding:2px 0">
       <span style="width:16px;height:16px;border-radius:3px;flex:none;background:${color};
         box-shadow:0 0 6px ${color}"></span>
-      <span style="flex:1">${esc(entry.name)}</span>
+      <span style="flex:1">${esc(entry.name)}${where}</span>
       <code>${esc(color)}</code>
     </li>`;
   }).join("");
@@ -1619,7 +1670,7 @@ class AnimaColorFiller extends ApplicationV2 {
   };
 
   get plan() {
-    return animaColorPlan(game.actors ?? []);
+    return fullAnimaColorPlan(game.actors ?? [], game.scenes ?? []);
   }
 
   async _renderHTML() {
@@ -3255,8 +3306,8 @@ export {
   playAnimaFlare, playFlareCaption, playFlare, receiveAnimaFlare,
   ANIMA_TYPE_COLORS, ANIMA_CASTE_COLORS, ANIMA_WORD_COLORS, sheetAnimaColor, colorWords,
   closestColorWord, colorFromText, animaColorFor,
-  FILL_LIST_MAX, animaColorPlan, animaColorUpdates, applyAnimaColors,
-  animaColorPlanMarkup, AnimaColorFiller,
+  FILL_LIST_MAX, needsAnimaColor, animaColorPlan, tokenAnimaColorPlan, fullAnimaColorPlan,
+  animaColorUpdates, applyAnimaColors, animaColorPlanMarkup, AnimaColorFiller,
   breakTextStyle,
   CALLOUT_MESSAGE, CALLOUT_DURATION, CALLOUT_DURATION_GENTLE, CALLOUT_STAGGER, CALLOUT_MAX,
   CALLOUT_SIZE_MIN, CALLOUT_SIZE_MAX,
