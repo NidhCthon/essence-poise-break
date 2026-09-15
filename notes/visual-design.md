@@ -137,6 +137,11 @@ The screen gets two things. A glow runs round its edges as the column erupts,
 and a caption names the level and the character, with the first sentence of a
 player character's iconic anima: the thing everyone at the table would see.
 
+The caption started out capped at 96, 30 and 22 pixels for the level, the name
+and the iconic line, and the table wanted it bigger, as with every other piece
+of text here. They now reach 170, 50 and 36 pixels, measured to fit from the
+preview's small frame up to a large screen.
+
 Photosensitive mode and reduced motion get a slow, faint column with no ring,
 no flicker and no glow round the edges, and a caption that only fades.
 
