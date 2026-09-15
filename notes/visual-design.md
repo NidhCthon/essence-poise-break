@@ -181,6 +181,12 @@ The colours are chosen to read on a band of light and as added light on the
 map: none is near white, which the effects already treat as no colour, and the
 dark ones - midnight, soulsteel - are still dark enough to carry white text.
 
+Matching a colour at the moment it is drawn leaves the system's own anima glow
+white, since that reads the sheet. Rather than write to sheets quietly, there
+is a Storyteller's button in Module Settings that lists every sheet still on
+the default and fills them in when pressed. The rule is the same either way: a
+colour someone picked is never overwritten.
+
 ## Checking it
 
 `tools/preview/` renders every panel state in both themes, and the shatter frame

@@ -1155,7 +1155,7 @@ function cutInColor(value) {
 function cutInImage(value) {
   const src = typeof value === "string" ? value.trim() : "";
   // Browsers ignore whitespace and control characters inside a URL scheme.
-  const scheme = src.replace(/[\s -]+/g, "");
+  const scheme = src.replace(/[\s\u0000-\u001f]+/g, "");
   if (!src || /^(?:javascript|vbscript):|^data:(?!image\/)/i.test(scheme)) {
     return CUT_IN_PORTRAIT;
   }
@@ -1532,6 +1532,122 @@ function animaColorFor(actor) {
   if (fromAnima) return fromAnima;
 
   return ANIMA_TYPE_COLORS[type] ?? CUT_IN_FALLBACK;
+}
+
+/* -------------------------------------------- */
+/*  Filling anima colours in on sheets          */
+/* -------------------------------------------- */
+
+/**
+ * The Storyteller's button in Module Settings: write the colour this module
+ * matched to each character into their sheet, so the system's own anima glow
+ * matches the cut-in, the flare and the callouts.
+ *
+ * Only sheets still on the system's default white are touched - a colour
+ * anyone has picked is left exactly as it is - and the window lists every
+ * sheet it would change before anything is written.
+ */
+const FILL_LIST_MAX = 40;
+
+/** Sheets still on the default white, with the colour that fits each. */
+function animaColorPlan(actors) {
+  const list = actors ? [...actors] : [];
+  return list
+    .filter((actor) => actor?.system?.details
+      && !sheetAnimaColor(actor.system.details.animacolor))
+    .map((actor) => ({
+      id: actor.id ?? null,
+      name: typeof actor.name === "string" ? actor.name : "",
+      color: animaColorFor(actor)
+    }));
+}
+
+/** That plan as Foundry document updates. */
+function animaColorUpdates(plan) {
+  return (plan ?? [])
+    .filter((entry) => entry?.id)
+    .map((entry) => ({ _id: entry.id, "system.details.animacolor": cutInColor(entry.color) }));
+}
+
+/** Write the plan, in one update, and report how many sheets were filled in. */
+async function applyAnimaColors(plan, { update } = {}) {
+  const updates = animaColorUpdates(plan);
+  if (!updates.length) return 0;
+  const write = update
+    ?? ((documents) => getDocumentClass("Actor").updateDocuments(documents));
+  await write(updates);
+  return updates.length;
+}
+
+/** What the window shows before anything is written. */
+function animaColorPlanMarkup(plan) {
+  const list = plan ?? [];
+  if (!list.length) {
+    return "<p>Every sheet already has an anima colour picked, so there is "
+      + "nothing to fill in.</p>";
+  }
+  const rows = list.slice(0, FILL_LIST_MAX).map((entry) => {
+    const color = cutInColor(entry.color);
+    return `<li style="display:flex;align-items:center;gap:8px;padding:2px 0">
+      <span style="width:16px;height:16px;border-radius:3px;flex:none;background:${color};
+        box-shadow:0 0 6px ${color}"></span>
+      <span style="flex:1">${esc(entry.name)}</span>
+      <code>${esc(color)}</code>
+    </li>`;
+  }).join("");
+  const more = list.length - Math.min(list.length, FILL_LIST_MAX);
+  return `<p>${list.length} sheet${list.length === 1 ? " is" : "s are"} still on the
+      system's default white. Each will be set to the colour matched from its caste,
+      its anima, or its Exalt type. Sheets with a colour already picked are left alone.</p>
+    <ul style="list-style:none;margin:0;padding:0;max-height:320px;overflow:auto">${rows}</ul>
+    ${more > 0 ? `<p>and ${more} more</p>` : ""}`;
+}
+
+/** The window behind the Module Settings button. */
+class AnimaColorFiller extends ApplicationV2 {
+  static DEFAULT_OPTIONS = {
+    id: "essence-poise-break-anima-colours",
+    classes: ["essence-poise-break"],
+    tag: "div",
+    window: {
+      title: "Fill in anima colours",
+      icon: "fa-solid fa-palette",
+      resizable: false
+    },
+    position: { width: 440, height: "auto" },
+    actions: { fill: AnimaColorFiller.#onFill }
+  };
+
+  get plan() {
+    return animaColorPlan(game.actors ?? []);
+  }
+
+  async _renderHTML() {
+    const plan = this.plan;
+    return `${animaColorPlanMarkup(plan)}
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px">
+        <button type="button" data-action="fill"${plan.length ? "" : " disabled"}>
+          Fill in ${plan.length} sheet${plan.length === 1 ? "" : "s"}
+        </button>
+      </div>`;
+  }
+
+  _replaceHTML(result, content) {
+    content.innerHTML = result;
+  }
+
+  /** Nothing is written until this is pressed. */
+  static async #onFill() {
+    try {
+      const filled = await applyAnimaColors(this.plan);
+      ui.notifications.info(
+        `Anima colours filled in on ${filled} sheet${filled === 1 ? "" : "s"}.`);
+    } catch (err) {
+      console.error(`${MODULE_ID} | could not fill in anima colours`, err);
+      ui.notifications.error("Could not fill in the anima colours; see the console.");
+    }
+    this.close();
+  }
 }
 
 /* -------------------------------------------- */
@@ -2986,6 +3102,20 @@ Hooks.once("init", () => {
     default: true
   });
 
+  // The Storyteller's button, below the settings above.
+  game.settings.registerMenu(MODULE_ID, "fillAnimaColors", {
+    name: "Anima colours on sheets",
+    label: "Fill in anima colours",
+    hint: "Writes the colour this module matches to each character - from their "
+      + "caste, their anima, or their Exalt type - into every sheet still on the "
+      + "system's default white, so the system's own anima glow matches these "
+      + "effects. A colour already picked is never touched, and the window lists "
+      + "what it will change before writing anything.",
+    icon: "fa-solid fa-palette",
+    type: AnimaColorFiller,
+    restricted: true
+  });
+
   game.settings.register(MODULE_ID, "autoOpen", {
     name: "Open automatically on your turn",
     hint: "Opens the panel when a combat turn reaches a character you control.",
@@ -3125,6 +3255,8 @@ export {
   playAnimaFlare, playFlareCaption, playFlare, receiveAnimaFlare,
   ANIMA_TYPE_COLORS, ANIMA_CASTE_COLORS, ANIMA_WORD_COLORS, sheetAnimaColor, colorWords,
   closestColorWord, colorFromText, animaColorFor,
+  FILL_LIST_MAX, animaColorPlan, animaColorUpdates, applyAnimaColors,
+  animaColorPlanMarkup, AnimaColorFiller,
   breakTextStyle,
   CALLOUT_MESSAGE, CALLOUT_DURATION, CALLOUT_DURATION_GENTLE, CALLOUT_STAGGER, CALLOUT_MAX,
   CALLOUT_SIZE_MIN, CALLOUT_SIZE_MAX,

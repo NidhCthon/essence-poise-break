@@ -19,6 +19,7 @@ export const settings = new Map([
 ]);
 
 export const registered = [];
+export const menus = [];
 export const notices = [];
 export const hooks = { once: new Map(), on: new Map() };
 
@@ -50,6 +51,7 @@ const gm = { id: "gm", isGM: true, active: true, isSelf: true };
 globalThis.game = {
   settings: {
     register(module, key, options) { registered.push({ module, key, options }); },
+    registerMenu(module, key, options) { menus.push({ module, key, options }); },
     get(module, key) { return settings.get(`${module}.${key}`); }
   },
   system: { id: "exaltedessence", version: "3.1.0" },

@@ -197,7 +197,11 @@ default white, the module finds one that fits the character, in this order:
    green hellfire, and so on — and orichalcum when there is none.
 
 Only the module's effects use it. The system's own Token Magic anima glow reads
-the sheet's colour itself, so it stays white until one is picked there.
+the sheet's colour itself, so it stays white until one is picked there — or
+until the Storyteller presses **Fill in anima colours** in Module Settings.
+That window lists every sheet still on the default white with the colour
+matched for it, and writes them in one go when you press the button. A colour
+already picked is never touched, and nothing is written until you press it.
 
 ## How it hooks in
 
