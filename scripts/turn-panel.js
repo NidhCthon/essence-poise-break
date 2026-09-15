@@ -1948,9 +1948,18 @@ function calloutLines(names) {
   return more > 0 ? [...shown, `+${more} more`] : shown;
 }
 
-/** Readable over a small token, and never shouting over a large one. */
+/** A name's size, in pixels at scene scale. */
+const CALLOUT_SIZE_MIN = 30;
+const CALLOUT_SIZE_MAX = 68;
+
+/**
+ * Big enough to read at a glance with the map zoomed out - the first size,
+ * about a third of the token's radius, was too small to read at the table -
+ * and still bounded over a very large token.
+ */
 function calloutSize(radius) {
-  return Math.round(Math.min(40, Math.max(18, (Number(radius) || 0) * 0.34)));
+  return Math.round(Math.min(CALLOUT_SIZE_MAX,
+    Math.max(CALLOUT_SIZE_MIN, (Number(radius) || 0) * 0.7)));
 }
 
 /**
@@ -2921,6 +2930,7 @@ export {
   playAnimaFlare, playFlareCaption, playFlare, receiveAnimaFlare,
   breakTextStyle,
   CALLOUT_MESSAGE, CALLOUT_DURATION, CALLOUT_DURATION_GENTLE, CALLOUT_STAGGER, CALLOUT_MAX,
+  CALLOUT_SIZE_MIN, CALLOUT_SIZE_MAX,
   calloutNames, calloutPayload, rollerCallout, sheetCallout, shouldShowCallouts,
   wrapRollerResources, wrapSpendItem, calloutFrame, calloutLines, calloutSize,
   calloutLayout, playCalloutsOnToken, playCallouts, receiveCallouts,

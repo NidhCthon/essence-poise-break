@@ -9,7 +9,7 @@ const {
   wrapRollerResources, wrapSpendItem, calloutFrame, calloutLines, calloutSize,
   calloutLayout, playCalloutsOnToken, playCallouts, receiveCallouts,
   CALLOUT_MESSAGE, CALLOUT_DURATION, CALLOUT_DURATION_GENTLE, CALLOUT_STAGGER, CALLOUT_MAX,
-  CUT_IN_FALLBACK
+  CALLOUT_SIZE_MIN, CALLOUT_SIZE_MAX, CUT_IN_FALLBACK
 } = panel;
 
 const scene = { id: "scene" };
@@ -227,9 +227,15 @@ test("a long list calls out the first few names and counts the rest", () => {
 });
 
 test("names are sized to the token within readable bounds", () => {
-  assert.equal(calloutSize(20), 18);
-  assert.equal(calloutSize(300), 40);
-  assert.ok(calloutSize(80) > 18 && calloutSize(80) < 40);
+  assert.equal(calloutSize(10), CALLOUT_SIZE_MIN);
+  assert.equal(calloutSize(500), CALLOUT_SIZE_MAX);
+  assert.ok(calloutSize(70) > CALLOUT_SIZE_MIN && calloutSize(70) < CALLOUT_SIZE_MAX);
+});
+
+test("on an ordinary token a name is big enough to read with the map zoomed out", () => {
+  // A 100px grid square is a radius of 50. The first size gave 18px, which
+  // the table found too small to read.
+  assert.ok(calloutSize(50) >= 30);
 });
 
 test("later names come out later and sit higher", () => {

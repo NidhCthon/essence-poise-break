@@ -136,9 +136,12 @@ game borrows from. So the name comes out of the token in the BREAK text's
 lettering and style - the same carved face, dark stroke and shadow - and bursts
 in at nearly twice its size before it lands, then rises and fades.
 
-It is quieter than BREAK on purpose. It is smaller, sized to the token, does
-not crack, and its colour is the character's anima tinted towards light rather
-than break red, since a Charm is theirs rather than something done to them.
+It is quieter than BREAK in what it does, not in how big it is. It does not
+crack, and its colour is the character's anima tinted towards light rather than
+break red, since a Charm is theirs rather than something done to them. It first
+shipped at about a third of the token's radius, and at the table that was too
+small to read with the map zoomed out, so a name is now sized like the BREAK
+word - a little over two thirds of the radius, from 30 to 68 pixels.
 Several Charms come out a quarter of a second apart, each above the last, so a
 stack of techniques reads as a sequence rather than a block of text.
 
