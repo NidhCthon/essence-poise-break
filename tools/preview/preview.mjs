@@ -9,8 +9,23 @@ const {
   createBreakText, BREAK_TEXT_DURATION, cutInMarkup,
   emberLayout, flareFrame, drawFlare, flareCaptionMarkup,
   FLARE_EMBERS, FLARE_EMBERS_GENTLE, FLARE_DURATION, FLARE_DURATION_GENTLE,
-  breakTextStyle, calloutLines, calloutLayout, calloutSize, CALLOUT_DURATION, CALLOUT_STAGGER
+  breakTextStyle, calloutLines, calloutLayout, calloutSize, CALLOUT_DURATION, CALLOUT_STAGGER,
+  ANIMA_TYPE_COLORS, ANIMA_CASTE_COLORS
 } = panel;
+
+/* ----------------------------- Anima colours ----------------------------- */
+
+// Every Exalt type's colour, with its castes beside it, to judge the palette by eye.
+{
+  const chip = (label, color, big = false) =>
+    `<span style="display:inline-flex;align-items:center;gap:6px;margin:0 12px 6px 0">
+      <span style="width:${big ? 26 : 18}px;height:${big ? 26 : 18}px;border-radius:4px;background:${color};
+        box-shadow:0 0 10px ${color}"></span>${label}</span>`;
+  document.getElementById("anima-colors").innerHTML = Object.entries(ANIMA_TYPE_COLORS)
+    .map(([type, color]) => `<div style="margin-bottom:8px">${chip(`<b>${type}</b>`, color, true)}${
+      Object.entries(ANIMA_CASTE_COLORS[type] ?? {}).map(([caste, c]) => chip(caste, c)).join("")}</div>`)
+    .join("");
+}
 
 const theme = new URLSearchParams(location.search).get("theme") === "light"
   ? "theme-light" : "theme-dark";

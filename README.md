@@ -179,6 +179,26 @@ together come out one after another, stacked, with any past four counted.
 - With Foundry's photosensitive mode the names fade in and out with no burst.
   Each player can turn them off with **Show Charm callouts**.
 
+## Anima colours
+
+The cut-in, the anima flare and Charm callouts are drawn in the character's
+anima colour. A colour picked on the sheet always wins. Left at the system's
+default white, the module finds one that fits the character, in this order:
+
+1. **Their caste or aspect**, as written on the sheet — Wood Aspect is green,
+   Fire red, Night Caste midnight blue, Journeys gold. The caste is free text,
+   so it is matched loosely: "Wood-aspected", "Chosen of Jorneys" and "the Secret
+   caste" all find their colour, and a caste word from another Exalt type, or a
+   plain colour word ("Crimson"), counts too.
+2. **A Liminal's nature** — blood, breath, flesh, marrow or soil.
+3. **Colour words in their anima** — the passive, active and iconic descriptions
+   on the Charms tab: "a burning phoenix" is fire, "moonlit" silver.
+4. **Their Exalt type** — Solar gold, Lunar moonsilver, Abyssal crimson, Infernal
+   green hellfire, and so on — and orichalcum when there is none.
+
+Only the module's effects use it. The system's own Token Magic anima glow reads
+the sheet's colour itself, so it stays white until one is picked there.
+
 ## How it hooks in
 
 Casting is not a roll type of its own. In Essence you spend the spell's Will,

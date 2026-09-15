@@ -166,6 +166,21 @@ A decisive attack names its Charms at the token when the dice are rolled and
 again in the cut-in if it lands. The first is the declaration, the second the
 payoff.
 
+## Anima colours
+
+The anima colour picker on the sheet defaults to white, and most sheets are
+never changed, so every effect would have looked the same. Exalted gives each
+kind of Exalt, and most castes and aspects, a colour of its own - a Wood-aspect
+Dragon-Blood's anima is green, an Infernal's the green of the Yozis' fire, a
+Night Caste's the dark of the hour - so with no colour picked the module takes
+one from the sheet's own words: the caste first, since it is the most specific,
+then a Liminal's nature, then colour words in the anima descriptions a player
+has written, then the Exalt type.
+
+The colours are chosen to read on a band of light and as added light on the
+map: none is near white, which the effects already treat as no colour, and the
+dark ones - midnight, soulsteel - are still dark enough to carry white text.
+
 ## Checking it
 
 `tools/preview/` renders every panel state in both themes, and the shatter frame
