@@ -32,7 +32,7 @@ import { clearAuras, syncAurasSafely } from "./bonfire-aura.js";
 import { defeatCombatantTokens, defeatEffectTokens, playDefeats } from "./defeated.js";
 import { endsFight, playFinale, playSplash, startsFight } from "./splash.js";
 import { poiseAfterUpdate, rememberCanvasPoise, rememberPoise } from "./poise-numbers.js";
-import { receiveCallouts, receiveGambitCallout, wrapResolveGambit, wrapRollerResources, wrapSpendItem } from "./callouts.js";
+import { receiveCallouts, receiveGambitCallout, receiveMissCallout, wrapMissCallout, wrapResolveGambit, wrapRollerResources, wrapSpendItem } from "./callouts.js";
 import { roundAdvanced, stampGambitEffect, sweepGambitEffects } from "./gambits.js";
 
 /* -------------------------------------------- */
@@ -196,6 +196,19 @@ Hooks.once("init", () => {
       + "names an antagonist's gambits too, since everyone sees them happen. "
       + "With Foundry's photosensitive mode on, the name fades in and out "
       + "instead. Turn this off to hide them.",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
+  game.settings.register(MODULE_ID, "missCallouts", {
+    name: "Show miss callouts",
+    hint: "When an attack or gambit misses, the target calls it out - PARRIED! "
+      + "or DODGED! for a character, by the Defense that stopped it, and MISS! "
+      + "for an antagonist. It plays for tokens you can see. With Foundry's "
+      + "photosensitive mode on, the word fades in and out instead. Turn this "
+      + "off to hide them.",
     scope: "client",
     config: true,
     type: Boolean,
@@ -386,6 +399,7 @@ Hooks.once("ready", () => {
     receiveAnimaFlare(message);
     receiveCallouts(message);
     receiveGambitCallout(message);
+    receiveMissCallout(message);
   });
 
   // Charm callouts: the roller paying for a roll's Charms, and the actor
@@ -395,6 +409,10 @@ Hooks.once("ready", () => {
 
   // Gambit callouts: the roller resolving a gambit that has landed.
   wrapResolveGambit(game.exaltedessence?.RollForm);
+
+  // Miss callouts: the roller's end-of-attack step, which runs hit or miss,
+  // wrapped after the cut-in's wrap of the same step.
+  wrapMissCallout(game.exaltedessence?.RollForm);
 
   // The anima flare. The client changing an actor notes its anima level first
   // and compares once the system has worked out the new one. preUpdateActor is

@@ -7,13 +7,14 @@ import { panel, settings } from "./foundry.mjs";
 const {
   effectEnabled, impactAllowed, shouldShowCutIn, shouldShowDecisive, breakEffectTokens,
   defeatEffectTokens, defeatCombatantTokens, poiseNumberTokens, startsFight, endsFight,
-  splashedCombats, wantedAuras, shouldShowCallouts, shouldShowGambitCallout, shouldShowFlare
+  splashedCombats, wantedAuras, shouldShowCallouts, shouldShowGambitCallout, shouldShowFlare,
+  shouldShowMissCallout
 } = panel;
 
 const MASTER = "essence-poise-break.cinematicEffects";
 const EFFECTS = [
   "breakEffect", "decisiveCutIn", "hitImpact", "defeatedFinisher", "poiseNumbers",
-  "charmCallouts", "gambitCallouts", "animaFlare", "bonfireAura", "roundSplash", "finaleSplash"
+  "charmCallouts", "gambitCallouts", "missCallouts", "animaFlare", "bonfireAura", "roundSplash", "finaleSplash"
 ];
 
 const scene = { id: "here" };
@@ -45,6 +46,7 @@ function everything() {
     poiseNumbers: on(poiseNumberTokens({ getActiveTokens: () => [seen] })),
     charmCallouts: shouldShowCallouts(payload),
     gambitCallouts: shouldShowGambitCallout(payload),
+    missCallouts: shouldShowMissCallout(payload),
     animaFlare: shouldShowFlare(payload),
     bonfireAura: wantedAuras([burning]).size > 0,
     roundSplash: startsFight({ id: "c", scene }, { round: 1 }, { board }),

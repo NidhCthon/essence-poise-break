@@ -292,6 +292,19 @@ the panel gives gambits, rather than the character's anima colour.
   photosensitive mode the name fades in and out. Each player can turn them off
   with **Show gambit callouts**.
 
+## Miss callouts
+
+When an attack or gambit misses, the target calls it out, in pale steel:
+**PARRIED!** or **DODGED!** for a character, by whichever of Parry and Evasion
+stopped it - the same one the roller used - and **MISS!** for an antagonist,
+who has a single Defense.
+
+- It follows the roller's own test: accuracy short of the target's Defense.
+  An attack with no target calls nothing out.
+- Each player sees it only for a token they can see. With Foundry's
+  photosensitive mode the word fades in and out. Each player can turn them off
+  with **Show miss callouts**.
+
 ## Anima colours
 
 The cut-in, the anima flare, the Bonfire aura and Charm callouts are drawn in the character's
@@ -357,6 +370,9 @@ value, because Foundry cancels an update when one of those returns `false`.
 
 Gambit callouts wrap the roller's `_resolveGambit`, which it calls only when
 a gambit lands, in the same way, and read the gambit from `this.object.gambit`.
+Miss callouts wrap `attackSequence` too, after the cut-in: the roller runs it
+at the end of every attack, hit or miss. Each wrap keeps the marks the other
+left on it, so neither ever wraps twice.
 
 Charm callouts wrap two more of the system's steps, in the same way: the
 roller's `_updateRollerResources`, where it pays for the Charms added to a roll,
@@ -422,7 +438,7 @@ one file for each part:
 | `anima-colors.js` | matching anima colours, and the fill-in button |
 | `anima-flare.js` | the anima flare |
 | `bonfire-aura.js` | the Bonfire aura |
-| `callouts.js` | Charm and gambit callouts |
+| `callouts.js` | Charm, gambit and miss callouts |
 
 Each file imports only what it uses from the others, and `turn-panel.js`
 re-exports them all for the tests.

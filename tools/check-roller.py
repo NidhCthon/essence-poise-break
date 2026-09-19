@@ -22,6 +22,9 @@ say what a roll needs before the roller runs:
   one - telling a use from switching off by `item.system.active`.
 * Gambit callouts wrap the roller's `_resolveGambit()`, which it calls only
   when a gambit lands, and read the gambit from `this.object.gambit`.
+* Miss callouts wrap `attackSequence()` too, relying on the roller calling it
+  after its miss branch as well as a hit, and read Parry and Evasion to say
+  which one stopped the attack.
 
 That duplication is deliberate, but it means the module can fall out of step
 when the system changes.
@@ -75,6 +78,15 @@ GAMBIT_CALLOUT_LINES = [
     re.compile(r"^.*\bthis\._resolveGambit\(postDefenseTotal\);.*$", re.M),
     re.compile(r"^\s*if \(postDefenseTotal >= 0 && this\.object\.target\) \{\s*$", re.M),
     re.compile(r"^\s*switch \(this\.object\.gambit\) \{\s*$", re.M),
+]
+# What miss callouts rely on: the miss branch, and the payment and attack step
+# the roller runs after it whichever way the attack went.
+MISS_CALLOUT_LINES = [
+    re.compile(r"^\s*if \(postDefenseTotal < 0\) \{\s*$", re.M),
+    re.compile(r"^.*Attack Missed!.*$", re.M),
+    re.compile(r"^\s*this\._updateRollerResources\(\);\n\s*this\.attackSequence\(\);\s*$", re.M),
+    re.compile(r"^.*this\.object\.target\.actor\.system\.parry\.value >= "
+               r"this\.object\.target\.actor\.system\.evasion\.value.*$", re.M),
 ]
 PANEL = Path(__file__).resolve().parent.parent / "scripts" / "core.js"
 VERIFIED = re.compile(r'const VERIFIED_SYSTEM = "([^"]+)"')
@@ -194,6 +206,14 @@ def extract(source):
         gambit_callouts.extend(found)
     blocks["gambit-callouts"] = normalise("\n".join(gambit_callouts))
 
+    miss_callouts = []
+    for pattern in MISS_CALLOUT_LINES:
+        found = pattern.findall(source)
+        if not found:
+            return None
+        miss_callouts.extend(found)
+    blocks["miss-callouts"] = normalise("\n".join(miss_callouts))
+
     return blocks
 
 
@@ -276,6 +296,7 @@ def main():
             "social": "socialNumbers() and the social block",
             "gambits": "the GAMBITS table in scripts/rules.js",
             "gambit-callouts": "gambitCallout() and wrapResolveGambit()",
+            "miss-callouts": "isMiss(), missWord() and wrapMissCallout() in scripts/callouts.js",
             "cutin": "isDecisiveHit(), cutInPayload() and wrapAttackSequence() "
                      "in scripts/cut-in.js",
             "anima": "animaRank() and crossesIntoFlare() in scripts/anima-flare.js",

@@ -14,7 +14,8 @@ const {
   auraFlameLayout, drawAura, AURA_FLAMES, AURA_FLAMES_ICONIC, hitStop,
   createDefeatText, drainScreen,
   poiseNumberText, poiseNumberColor, poiseNumberFrame, poiseNumberSize,
-  gambitName, gambitCalloutLine, CUT_IN_FALLBACK, splashMarkup, finaleMarkup
+  gambitName, gambitCalloutLine, CUT_IN_FALLBACK, splashMarkup, finaleMarkup,
+  MISS_WORDS, MISS_COLOR
 } = panel;
 
 /* ----------------------------- Anima colours ----------------------------- */
@@ -525,6 +526,34 @@ calloutApp.ticker.add(() => liveCallout((performance.now() - calloutStarted) % c
     label.anchor.set(0.5, 0);
     label.position.set(x, 236);
     app.stage.addChild(label);
+  });
+}
+
+
+/* ----------------------------- Miss callouts ------------------------------ */
+
+// The three words a target calls out, just after they land, in steel.
+{
+  const app = new PIXI.Application({
+    width: calloutCell * MISS_WORDS.length, height: 260, backgroundColor: 0x2f332c, antialias: true
+  });
+  document.getElementById("miss-callouts").append(app.view);
+  const size = calloutSize(radius);
+  MISS_WORDS.forEach((word, i) => {
+    const x = calloutCell / 2 + i * calloutCell;
+    const disc = new PIXI.Graphics();
+    disc.beginFill(0x5d574c).drawCircle(0, 0, radius * 0.9).endFill();
+    disc.lineStyle(3, 0xd8d2c0, 0.8).drawCircle(0, 0, radius * 0.9);
+    disc.position.set(x, 200);
+    app.stage.addChild(disc);
+    const text = new PIXI.Text(word, breakTextStyle(PIXI, size));
+    text.anchor.set(0.5, 1);
+    const [frame] = calloutLayout(700, 1, { radius, size, hue: parseInt(MISS_COLOR.slice(1), 16) });
+    text.alpha = frame.alpha;
+    text.scale.set(frame.scale);
+    text.tint = frame.tint;
+    text.position.set(x + frame.x, 200 + frame.y);
+    app.stage.addChild(text);
   });
 }
 

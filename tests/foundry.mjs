@@ -22,6 +22,7 @@ export const settings = new Map([
   ["essence-poise-break.bonfireAura", true],
   ["essence-poise-break.charmCallouts", true],
   ["essence-poise-break.gambitCallouts", true],
+  ["essence-poise-break.missCallouts", true],
   ["essence-poise-break.roundSplash", true],
   ["essence-poise-break.finaleSplash", true],
   ["essence-poise-break.autoOpen", true]

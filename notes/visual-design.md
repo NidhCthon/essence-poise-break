@@ -326,6 +326,17 @@ A Charm of an antagonist's is kept from the players, who may not know what it
 can do. A gambit is not: everyone at the table sees the weapon fly or the
 target go down, so its name is shown to everyone.
 
+## Miss callouts
+
+A whiffed swing was the one outcome of an attack that showed nothing. Now the
+target calls it out, in the callout's lettering: PARRIED! or DODGED! by
+whichever Defense the roller used against them, or MISS! for an antagonist,
+whose one Defense says nothing about how. The word comes from the target, not
+the attacker, because the miss is theirs to claim.
+
+It is pale steel, belonging to neither side's power - not an anima colour, not
+orichalcum - so it never reads as a Charm or a gambit.
+
 ## Anima colours
 
 The anima colour picker on the sheet defaults to white, and most sheets are
@@ -357,7 +368,7 @@ same actor.
 
 ## One switch for all of it
 
-There are eleven effects, each with its own setting, so that a table can keep
+There are twelve effects, each with its own setting, so that a table can keep
 the ones it likes. That is too many to hunt through for someone on a slow
 laptop, or who wants a quiet session, so **Cinematic effects** turns every one
 off at once. It sits above them in the settings, is each player's own, and

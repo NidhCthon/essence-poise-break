@@ -104,7 +104,12 @@ test("the switch comes before the effects it governs", () => {
   const keys = registered.map((r) => r.key);
   const at = keys.indexOf("cinematicEffects");
   for (const key of ["breakEffect", "decisiveCutIn", "hitImpact", "defeatedFinisher", "poiseNumbers",
-    "charmCallouts", "gambitCallouts", "animaFlare", "bonfireAura", "roundSplash", "finaleSplash"]) {
+    "charmCallouts", "gambitCallouts", "missCallouts", "animaFlare", "bonfireAura", "roundSplash", "finaleSplash"]) {
     assert.ok(keys.indexOf(key) > at, `${key} is listed above the switch`);
   }
+});
+
+test("miss callouts are each player's own choice, on unless they turn them off", () => {
+  assert.equal(byKey.missCallouts.scope, "client");
+  assert.equal(byKey.missCallouts.default, true);
 });

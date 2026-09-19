@@ -440,6 +440,115 @@ function receiveGambitCallout(message, { play = playGambitCallout, show = should
   }
 }
 
+/* -------------------------------------------- */
+/*  Miss callouts                               */
+/* -------------------------------------------- */
+
+/**
+ * Miss callouts: when an attack or gambit falls short of the target's Defense,
+ * a word bursts from the target - the one who made it miss - in the callout's
+ * lettering. A character whose Parry is their Defense PARRIED! it, one whose
+ * Evasion is DODGED! it, and an antagonist, who has a single Defense, makes it
+ * MISS!.
+ *
+ * The roller runs attackSequence() at the end of every attack, hit or miss, so
+ * that is wrapped as the cut-in wraps it: the system's step runs first and
+ * unchanged, then the rolling client plays the callout and sends it on.
+ */
+const MISS_MESSAGE = "missCallout";
+/** Steel, not anyone's anima: the moment belongs to neither side's power. */
+const MISS_COLOR = "#8FB3D9";
+const MISS_WORDS = ["MISS!", "PARRIED!", "DODGED!"];
+
+function showingMissCallouts() {
+  return effectEnabled("missCallouts");
+}
+
+/** Did this roll's attack fall short? The roller's own test, as for a hit. */
+function isMiss(object) {
+  if (!["withering", "decisive", "gambit"].includes(object?.rollType)) return false;
+  const accuracy = Number(object.accuracyResult);
+  const defense = Number(object.defense);
+  if (!Number.isFinite(accuracy) || !Number.isFinite(defense)) return false;
+  return accuracy - defense < 0;
+}
+
+/** How the target made it miss, from the defence the roller used against them. */
+function missWord(actor) {
+  if (!actor || actor.type === "npc") return "MISS!";
+  const parry = Number(actor.system?.parry?.value) || 0;
+  const evasion = Number(actor.system?.evasion?.value) || 0;
+  return parry >= evasion ? "PARRIED!" : "DODGED!";
+}
+
+/** The callout for a roller whose attack has just missed, from its target's token. */
+function missCallout(form) {
+  const object = form?.object;
+  const target = object?.target;
+  if (!isMiss(object) || !target?.actor) return null;
+  return calloutPayload(target.actor, target, [missWord(target.actor)]);
+}
+
+function shouldShowMissCallout(payload) {
+  if (!payload || !showingMissCallouts()) return false;
+  const token = flareToken(payload);
+  return !!token && !!token.isVisible && !token.destroyed;
+}
+
+function playMissCallout(payload) {
+  const token = flareToken(payload);
+  const word = payload?.charms?.[0];
+  if (!token || !MISS_WORDS.includes(word)) return null;
+  return playCalloutsOnToken(token, [word], MISS_COLOR);
+}
+
+/** Wrap the roller's end-of-attack step. Its own step runs first, and its result is returned. */
+function wrapMissCallout(RollForm, {
+  emit = emitOnSocket, play = playMissCallout, show = shouldShowMissCallout
+} = {}) {
+  const prototype = RollForm?.prototype;
+  const original = prototype?.attackSequence;
+  if (typeof original !== "function" || original.epbMissCallout) return false;
+  const wrapped = function (...args) {
+    const result = original.apply(this, args);
+    let payload = null;
+    try {
+      payload = missCallout(this);
+    } catch (err) {
+      console.warn(`${MODULE_ID} | could not read the roll for a miss callout`, err);
+    }
+    if (!payload) return result;
+    try {
+      emit({ type: MISS_MESSAGE, payload });
+    } catch (err) {
+      console.warn(`${MODULE_ID} | could not send a miss callout`, err);
+    }
+    try {
+      if (show(payload)) play(payload);
+    } catch (err) {
+      console.warn(`${MODULE_ID} | could not play a miss callout`, err);
+    }
+    return result;
+  };
+  // Keep whatever marks the step already carries, so the cut-in's wrap still
+  // knows it has been done.
+  Object.assign(wrapped, original);
+  wrapped.epbMissCallout = true;
+  prototype.attackSequence = wrapped;
+  return true;
+}
+
+/** A miss callout sent by another client: only one of the three words, and only if seen. */
+function receiveMissCallout(message, { play = playMissCallout, show = shouldShowMissCallout } = {}) {
+  if (message?.type !== MISS_MESSAGE) return;
+  try {
+    const payload = cleanCutInPayload(message.payload);
+    if (payload && MISS_WORDS.includes(payload.charms?.[0]) && show(payload)) play(payload);
+  } catch (err) {
+    console.warn(`${MODULE_ID} | could not play a received miss callout`, err);
+  }
+}
+
 export {
   CALLED_OUT,
   CALLOUT_DURATION,
@@ -450,6 +559,9 @@ export {
   CALLOUT_SIZE_MIN,
   CALLOUT_STAGGER,
   GAMBIT_MESSAGE,
+  MISS_COLOR,
+  MISS_MESSAGE,
+  MISS_WORDS,
   calloutFrame,
   calloutLayout,
   calloutLines,
@@ -460,18 +572,25 @@ export {
   gambitCallout,
   gambitCalloutLine,
   gambitName,
+  isMiss,
+  missCallout,
+  missWord,
   playCallouts,
   playCalloutsOnToken,
   playGambitCallout,
+  playMissCallout,
   receiveCallouts,
   receiveGambitCallout,
+  receiveMissCallout,
   rollerCallout,
   sendCallouts,
   sheetCallout,
   shouldShowCallouts,
   shouldShowGambitCallout,
+  shouldShowMissCallout,
   showingCallouts,
   showingGambitCallouts,
+  wrapMissCallout,
   wrapResolveGambit,
   wrapRollerResources,
   wrapSpendItem

@@ -25,6 +25,10 @@
       "sha256": "1e3fc5d652b5ee515b4f218e8456587f884fdb7ee7434f08f920b2608c26fb0f",
       "block": "_resolveGambit(postDefenseTotal = 0) { this._resolveGambit(postDefenseTotal); if (postDefenseTotal >= 0 && this.object.target) { switch (this.object.gambit) {"
     },
+    "miss-callouts": {
+      "sha256": "627cfee776082422194f405efe22698e43aeb61a2be1a2915668eda8d661cd4b",
+      "block": "if (postDefenseTotal < 0) { <h4 class=\"dice-total\">Attack Missed!</h4> this._updateRollerResources(); this.attackSequence(); if (this.object.target.actor.system.parry.value >= this.object.target.actor.system.evasion.value) {"
+    },
     "anima": {
       "sha256": "54a4815c7298c52b242f888920dfef8e419df8e26a22860f52d9e06a37f5da00",
       "block": "_prepareBaseActorData(system) { system.motes.max = system.essence.value * 2 + Math.floor((system.essence.value - 1) / 2) + 3; let animaLevel = \"\"; if (game.settings.get(\"exaltedessence\", \"alternateAnima\")) { const animaMap = { 0: 'dim', 1: 'glowing', 2: 'burning', 3: 'iconic', }; animaLevel = animaMap[system.anima.value]; } else { if (system.anima.value >= 1) { animaLevel = \"dim\"; } if (system.anima.value >= 3) { animaLevel = \"glowing\"; } if (system.anima.value >= 5) { animaLevel = \"burning\"; } if (system.anima.value >= 7) { animaLevel = \"bonfire\"; } if (system.anima.value === 10) { animaLevel = \"iconic\"; } } system.anima.level = animaLevel; }"
