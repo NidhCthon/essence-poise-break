@@ -125,6 +125,20 @@ To open it by hand, make a macro:
 game.modules.get("essence-poise-break").api.open();
 ```
 
+## ROUND 1, FIGHT!
+
+As a combat starts, a fighting game's opening crosses everyone's screen: a dark
+band edged in orichalcum snaps open, ROUND 1 slides in and out through it, and
+FIGHT! slams down with one flash before the band closes. It takes under two and
+a half seconds and never takes a click.
+
+- It plays once per fight, as the combat reaches round one. Stepping back into
+  round one does not play it again; resetting the combat does.
+- Each player sees it only if they are looking at the scene the fight is on.
+- With Foundry's photosensitive mode or reduced motion, the band and both words
+  fade in and out, with no slide, slam or flash. Each player can turn it off
+  with **Show the ROUND 1, FIGHT! splash**.
+
 ## The decisive cut-in
 
 When a decisive attack lands, the attacker cuts in across everyone's screen: a

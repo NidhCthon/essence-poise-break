@@ -84,3 +84,8 @@ test("gambit callouts are each player's own choice, on unless they turn them off
   assert.equal(byKey.gambitCallouts.scope, "client");
   assert.equal(byKey.gambitCallouts.default, true);
 });
+
+test("the round splash is each player's own choice, on unless they turn it off", () => {
+  assert.equal(byKey.roundSplash.scope, "client");
+  assert.equal(byKey.roundSplash.default, true);
+});

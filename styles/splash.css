@@ -1,0 +1,180 @@
+/* Poise & Break — the ROUND 1, FIGHT! splash
+
+   As a combat starts, a fighting game's opening across the screen: a dark band
+   snaps open across the middle, ROUND 1 slides in and out through it, and
+   FIGHT! slams down from three times its size with one flash, then the band
+   closes. Drawn in the page like the cut-in, above everything and never in the
+   way of a click.
+
+   Sizes are container units of the splash itself, so one set of rules fills a
+   screen in Foundry and a small frame in the preview. Every animation here
+   runs for SPLASH_DURATION (2400ms), or SPLASH_DURATION_GENTLE (2600ms) for
+   the gentle version, in scripts/turn-panel.js. */
+
+.epb-splash-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.epb-splash {
+  --epb-splash-gold: #E5B356;
+  --epb-splash-ink: #0B0907;
+  --epb-splash-ease: cubic-bezier(0.2, 0.9, 0.25, 1);
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  font-family: "Modesto Condensed", "Signika", sans-serif;
+  text-transform: uppercase;
+  color: #FFFFFF;
+}
+
+/* The words all sit in the one cell in the middle. */
+.epb-splash > * {
+  grid-area: 1 / 1;
+}
+
+.epb-splash-band {
+  width: 110cqw;
+  height: clamp(150px, 42cqh, 520px);
+  background:
+    linear-gradient(180deg,
+      var(--epb-splash-gold) 0 0.6cqh,
+      transparent 0.6cqh calc(100% - 0.6cqh),
+      var(--epb-splash-gold) calc(100% - 0.6cqh)),
+    linear-gradient(180deg,
+      rgb(11 9 7 / 0.92),
+      color-mix(in srgb, var(--epb-splash-gold) 18%, rgb(11 9 7 / 0.92)) 50%,
+      rgb(11 9 7 / 0.92));
+  box-shadow: 0 0 4cqh rgb(0 0 0 / 0.6);
+  transform: skewY(-3deg) scaleY(0);
+  animation: epb-splash-band 2400ms var(--epb-splash-ease) both;
+}
+
+.epb-splash-round {
+  font-size: clamp(44px, 10cqw, 190px);
+  letter-spacing: 0.12em;
+  text-shadow:
+    0 0 2cqw var(--epb-splash-gold),
+    0 0.5cqh 0 var(--epb-splash-ink);
+  animation: epb-splash-round 2400ms var(--epb-splash-ease) both;
+}
+
+.epb-splash-fight {
+  font-size: clamp(72px, 22cqw, 420px);
+  letter-spacing: 0.04em;
+  line-height: 0.9;
+  color: #FFE3A3;
+  -webkit-text-stroke: clamp(2px, 0.35cqw, 7px) var(--epb-splash-ink);
+  text-shadow:
+    0 0 3cqw var(--epb-splash-gold),
+    0 0 8cqw color-mix(in srgb, var(--epb-splash-gold) 60%, transparent);
+  animation: epb-splash-fight 2400ms var(--epb-splash-ease) both;
+}
+
+/* One flash, as FIGHT! lands. */
+.epb-splash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%,
+    #FFFFFF 0%,
+    color-mix(in srgb, var(--epb-splash-gold) 55%, #FFFFFF) 24%,
+    transparent 64%);
+  opacity: 0;
+  animation: epb-splash-flash 2400ms ease-out both;
+}
+
+@keyframes epb-splash-band {
+  0%   { transform: skewY(-3deg) scaleY(0); }
+  8%   { transform: skewY(-3deg) scaleY(1.06); }
+  12%  { transform: skewY(-3deg) scaleY(1); }
+  86%  { transform: skewY(-3deg) scaleY(1); opacity: 1; }
+  100% { transform: skewY(-3deg) scaleY(0); opacity: 0; }
+}
+
+@keyframes epb-splash-round {
+  0%, 6% { transform: translateX(-70cqw) skewX(-18deg); opacity: 0; }
+  14%    { transform: translateX(2cqw) skewX(-4deg); opacity: 1; }
+  18%    { transform: translateX(0) skewX(0); opacity: 1; }
+  38%    { transform: translateX(-1cqw) skewX(0); opacity: 1; }
+  45%    { transform: translateX(70cqw) skewX(18deg); opacity: 0; }
+  100%   { transform: translateX(70cqw); opacity: 0; }
+}
+
+@keyframes epb-splash-fight {
+  0%, 44% { transform: scale(3); opacity: 0; }
+  50%     { transform: scale(0.92); opacity: 1; }
+  53%     { transform: scale(1.05) translate(-0.8cqw, 0.4cqh); }
+  56%     { transform: scale(1) translate(0.6cqw, -0.3cqh); }
+  59%     { transform: scale(1) translate(-0.3cqw, 0.2cqh); }
+  62%     { transform: scale(1) translate(0, 0); opacity: 1; }
+  84%     { transform: scale(1.03); opacity: 1; }
+  100%    { transform: scale(1.35); opacity: 0; }
+}
+
+@keyframes epb-splash-flash {
+  0%, 48% { opacity: 0; }
+  51%     { opacity: 0.6; }
+  64%     { opacity: 0; }
+  100%    { opacity: 0; }
+}
+
+/* Photosensitive mode and reduced motion: no flash, no slam, no slide. The
+   band and both words fade in where they rest, stacked, hold, and fade out. */
+@keyframes epb-splash-fade {
+  0%   { opacity: 0; }
+  18%  { opacity: 1; }
+  78%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.epb-splash[data-gentle="true"]::after {
+  display: none;
+}
+
+.epb-splash[data-gentle="true"] .epb-splash-band {
+  transform: skewY(-3deg);
+  animation: epb-splash-fade 2600ms ease-in-out both;
+}
+
+.epb-splash[data-gentle="true"] .epb-splash-round {
+  transform: translateY(-12cqh);
+  font-size: clamp(32px, 6cqw, 110px);
+  animation: epb-splash-fade 2600ms ease-in-out both;
+}
+
+.epb-splash[data-gentle="true"] .epb-splash-fight {
+  transform: translateY(8cqh);
+  font-size: clamp(56px, 14cqw, 260px);
+  animation: epb-splash-fade 2600ms ease-in-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .epb-splash::after {
+    display: none;
+  }
+
+  .epb-splash .epb-splash-band {
+    transform: skewY(-3deg);
+    animation: epb-splash-fade 2600ms ease-in-out both;
+  }
+
+  .epb-splash .epb-splash-round {
+    transform: translateY(-12cqh);
+    font-size: clamp(32px, 6cqw, 110px);
+    animation: epb-splash-fade 2600ms ease-in-out both;
+  }
+
+  .epb-splash .epb-splash-fight {
+    transform: translateY(8cqh);
+    font-size: clamp(56px, 14cqw, 260px);
+    animation: epb-splash-fade 2600ms ease-in-out both;
+  }
+}

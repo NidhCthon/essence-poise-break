@@ -72,13 +72,15 @@ including "-(Break)" as Break ends, is left exactly as Foundry draws it.
 
 ## Motion
 
-There are eight moments, and one thing that stays moving:
+There are nine moments, and one thing that stays moving:
 
 - **The panel's crack.** Only the render that first finds a target in Break
   marks it (`data-just-broke`), so the shards crack once, not on every refresh.
 - **The map shatter.** About a second long. The ring arrives with the crack,
   not before it. The colour passes jade, then light, then red, because a straight
   blend from jade to red goes through a dull grey-brown halfway.
+- **ROUND 1, FIGHT!** Two and a half seconds across the screen, once per
+  fight. See below.
 - **The hit-stop and shake.** A seventh of a second held still, then under
   half a second of jolting, as a decisive hit lands. See below.
 - **The decisive cut-in.** About a second and a half, across the whole screen.
@@ -127,6 +129,25 @@ rules.
 
 Photosensitive mode and reduced motion get a fade where the band rests: no
 flash, no speed lines, no slam.
+
+## ROUND 1, FIGHT!
+
+A fight should open like one. As a combat starts, a dark band edged in
+orichalcum snaps open across the middle of the screen, ROUND 1 slides in from
+the left, holds, and slides out to the right, and FIGHT! slams down from three
+times its size with one flash and a jolt before the band closes.
+
+It plays once per fight, on the move into round one, rather than on every turn
+or round. A banner every turn was the obvious version and the wrong one: at a
+table it plays dozens of times a session and stops meaning anything by the
+second fight. Once, at the start, it keeps its weight.
+
+FIGHT! is the biggest text in the module - up to 420 pixels on a large screen,
+measured to fit its band from the preview's small frame up - because it is the
+one moment everyone is looking at the same thing.
+
+Starting a combat updates it, and every client gets the update, so nothing is
+sent. Each plays it if it is looking at the fight's scene.
 
 ## Hit-stop and screen shake
 

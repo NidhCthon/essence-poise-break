@@ -14,7 +14,7 @@ const {
   auraFlameLayout, drawAura, AURA_FLAMES, AURA_FLAMES_ICONIC, hitStop,
   createDefeatText, drainScreen,
   poiseNumberText, poiseNumberColor, poiseNumberFrame, poiseNumberSize,
-  gambitName, gambitCalloutLine, CUT_IN_FALLBACK
+  gambitName, gambitCalloutLine, CUT_IN_FALLBACK, splashMarkup
 } = panel;
 
 /* ----------------------------- Anima colours ----------------------------- */
@@ -213,6 +213,31 @@ cutInFrame("photosensitive or reduced motion, 900 ms", { at: 900, gentle: true }
 cutInFrame("an antagonist's, Charms kept from players, 800 ms", { at: 800, charms: [] });
 const replayCutIn = cutInFrame("live");
 document.getElementById("replay-cutin").addEventListener("click", replayCutIn);
+
+/* ------------------------------ Round splash ------------------------------ */
+
+// Frozen at moments through it, in the same small frame as the cut-in.
+function splashFrame(caption, { at = null, gentle = false } = {}) {
+  const wrap = document.createElement("div");
+  wrap.innerHTML = `<p class="preview-caption">${caption}</p><div class="preview-cutin"></div>`;
+  document.getElementById("splash").append(wrap);
+  const stageElement = wrap.querySelector(".preview-cutin");
+  const draw = () => {
+    stageElement.innerHTML = splashMarkup({ gentle });
+    if (at === null) return;
+    for (const animation of stageElement.getAnimations({ subtree: true })) {
+      animation.pause();
+      animation.currentTime = at;
+    }
+  };
+  draw();
+  return draw;
+}
+
+for (const ms of [150, 450, 1250, 1900]) splashFrame(`${ms} ms`, { at: ms });
+splashFrame("photosensitive or reduced motion, 1200 ms", { at: 1200, gentle: true });
+const replaySplash = splashFrame("live");
+document.getElementById("replay-splash").addEventListener("click", replaySplash);
 
 /* ------------------------------ Anima flare ------------------------------ */
 

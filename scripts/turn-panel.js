@@ -1904,6 +1904,89 @@ function poiseAfterUpdate(actor, changes, { play = playPoiseNumber } = {}) {
 }
 
 /* -------------------------------------------- */
+/*  The ROUND 1, FIGHT! splash                  */
+/* -------------------------------------------- */
+
+/**
+ * The splash: as a combat starts, a fighting game's opening crosses every
+ * screen - a band snaps open, ROUND 1 slides through it, and FIGHT! slams
+ * down. It plays once per fight, on the move into round one, so unlike a
+ * banner on every turn it never wears thin.
+ *
+ * Starting a combat updates it to round one, and that update reaches every
+ * client, so nothing is sent: each plays it for itself, if it is looking at
+ * the scene the fight is on. Stepping back into round one later does not play
+ * it again; resetting the combat to round zero lets it play once more.
+ */
+/** Matched by the animations in styles/splash.css. */
+const SPLASH_DURATION = 2400;
+const SPLASH_DURATION_GENTLE = 2600;
+
+function showingSplash() {
+  try {
+    return !!game.settings.get(MODULE_ID, "roundSplash");
+  } catch (err) {
+    return false;
+  }
+}
+
+/** The fights that have had their splash on this client. */
+const splashedCombats = new Set();
+
+/**
+ * Does this update start the fight, for this client? Round one reached for
+ * the first time, on the scene this client is looking at - or a combat tied to
+ * no scene at all. A combat sent back to round zero may play it again.
+ */
+function startsFight(combat, changed, { board = globalThis.canvas } = {}) {
+  if (!combat?.id || !changed || !Object.hasOwn(changed, "round")) return false;
+  if (changed.round === 0) {
+    splashedCombats.delete(combat.id);
+    return false;
+  }
+  if (changed.round !== 1 || splashedCombats.has(combat.id)) return false;
+  splashedCombats.add(combat.id);
+  if (!showingSplash()) return false;
+  let sceneId = null;
+  try {
+    sceneId = combat.scene?.id ?? null;
+  } catch (err) {
+    sceneId = null;
+  }
+  if (sceneId && board?.scene?.id !== sceneId) return false;
+  return true;
+}
+
+function splashMarkup({ gentle = false } = {}) {
+  return `<div class="epb-splash"${gentle ? ` data-gentle="true"` : ""} aria-hidden="true">
+    <div class="epb-splash-band"></div>
+    <div class="epb-splash-round">Round 1</div>
+    <div class="epb-splash-fight">Fight!</div>
+  </div>`;
+}
+
+/** The splash on screen now, so a second replaces it rather than stacking. */
+let splashShowing = null;
+
+/** Put the splash on this client's screen, then take it down. */
+function playSplash({ doc = globalThis.document } = {}) {
+  if (!doc?.body) return null;
+  const reducedMotion = !!globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  const gentle = photosensitive() || reducedMotion;
+  splashShowing?.remove();
+  const layer = doc.createElement("div");
+  layer.className = "epb-splash-layer";
+  layer.innerHTML = splashMarkup({ gentle });
+  doc.body.append(layer);
+  splashShowing = layer;
+  setTimeout(() => {
+    layer.remove();
+    if (splashShowing === layer) splashShowing = null;
+  }, gentle ? SPLASH_DURATION_GENTLE : SPLASH_DURATION);
+  return layer;
+}
+
+/* -------------------------------------------- */
 /*  Anima colours                               */
 /* -------------------------------------------- */
 
@@ -4184,6 +4267,18 @@ Hooks.once("init", () => {
     restricted: true
   });
 
+  game.settings.register(MODULE_ID, "roundSplash", {
+    name: "Show the ROUND 1, FIGHT! splash",
+    hint: "As a combat starts, ROUND 1 and FIGHT! cross the screen the way a "
+      + "fighting game opens a round - once per fight, on the scene you are "
+      + "looking at. With Foundry's photosensitive mode or reduced motion on, "
+      + "it fades in and out instead. Turn this off to hide it.",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
   game.settings.register(MODULE_ID, "autoOpen", {
     name: "Open automatically on your turn",
     hint: "Opens the panel when a combat turn reaches a character you control.",
@@ -4227,6 +4322,15 @@ Hooks.once("ready", () => {
   });
 
   Hooks.on("deleteCombat", () => panel?.close());
+
+  // The ROUND 1, FIGHT! splash, as a combat reaches round one.
+  Hooks.on("updateCombat", (combat, changed) => {
+    try {
+      if (startsFight(combat, changed)) playSplash();
+    } catch (err) {
+      console.warn(`${MODULE_ID} | could not play the round splash`, err);
+    }
+  });
 
   // Gambit effects that last the rest of the round, or a few rounds: record
   // when each began, since the roller does not, and clear each once it is over.
@@ -4366,6 +4470,7 @@ export {
   poiseNumberSize, poiseSeen, rememberPoise, rememberCanvasPoise, changesPoise, poiseChange,
   poiseNumberText, poiseNumberColor, poiseNumberFrame, poiseNumberTokens, playPoiseNumber,
   poiseAfterUpdate,
+  SPLASH_DURATION, SPLASH_DURATION_GENTLE, splashedCombats, startsFight, splashMarkup, playSplash,
   FLARE_MESSAGE, FLARE_DURATION, FLARE_DURATION_GENTLE, FLARE_EMBERS,
   FLARE_EMBERS_GENTLE, FLARE_HEIGHT, FLARE_WIDTH, FLARE_ICONIC_MAX,
   animaRank, crossesIntoFlare, iconicLine, flareLevelLabel, cleanFlarePayload,
