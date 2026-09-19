@@ -11,7 +11,7 @@ const {
   FLARE_EMBERS, FLARE_EMBERS_GENTLE, FLARE_DURATION, FLARE_DURATION_GENTLE,
   breakTextStyle, calloutLines, calloutLayout, calloutSize, CALLOUT_DURATION, CALLOUT_STAGGER,
   ANIMA_TYPE_COLORS, ANIMA_CASTE_COLORS,
-  auraFlameLayout, drawAura, AURA_FLAMES, AURA_FLAMES_ICONIC
+  auraFlameLayout, drawAura, AURA_FLAMES, AURA_FLAMES_ICONIC, hitStop
 } = panel;
 
 /* ----------------------------- Anima colours ----------------------------- */
@@ -292,6 +292,9 @@ auraApp.ticker.add(() => {
   const time = performance.now() / 1000;
   for (const draw of auraDraws) draw(time);
 });
+// The hit-stop and shake, played on the aura's canvas as it would be on the
+// board: the flames freeze on the stark frame, then the canvas jolts.
+document.getElementById("replay-impact").addEventListener("click", () => hitStop({ board: { app: auraApp } }));
 
 // An invented character and iconic anima, nothing from the books.
 const riser = {

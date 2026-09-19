@@ -64,3 +64,8 @@ test("the Bonfire aura is each player's own choice, on unless they turn it off",
   assert.equal(byKey.bonfireAura.scope, "client");
   assert.equal(byKey.bonfireAura.default, true);
 });
+
+test("hit-stop and screen shake are each player's own choice, on unless they turn them off", () => {
+  assert.equal(byKey.hitImpact.scope, "client");
+  assert.equal(byKey.hitImpact.default, true);
+});

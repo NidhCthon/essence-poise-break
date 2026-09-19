@@ -72,13 +72,15 @@ including "-(Break)" as Break ends, is left exactly as Foundry draws it.
 
 ## Motion
 
-There are five moments, and one thing that stays moving:
+There are six moments, and one thing that stays moving:
 
 - **The panel's crack.** Only the render that first finds a target in Break
   marks it (`data-just-broke`), so the shards crack once, not on every refresh.
 - **The map shatter.** About a second long. The ring arrives with the crack,
   not before it. The colour passes jade, then light, then red, because a straight
   blend from jade to red goes through a dull grey-brown halfway.
+- **The hit-stop and shake.** A seventh of a second held still, then under
+  half a second of jolting, as a decisive hit lands. See below.
 - **The decisive cut-in.** About a second and a half, across the whole screen.
   See below.
 - **The anima flare.** A little over two seconds, at the token, with a caption
@@ -121,6 +123,25 @@ rules.
 
 Photosensitive mode and reduced motion get a fade where the band rests: no
 flash, no speed lines, no slam.
+
+## Hit-stop and screen shake
+
+Fighting games sell a heavy hit by stopping: both fighters freeze for a few
+frames at the moment of contact, then everything jolts. A decisive hit does the
+same before the cut-in. For 140 milliseconds the map holds on a stark,
+high-contrast black-and-white frame - the impact frame anime cuts to - and then
+the board shakes for 420, hardest first, and the cut-in comes in over it.
+
+The freeze is not an effect laid over the map. Stopping the canvas's ticker
+stops everything that moves on it at once - a token sliding, the system's
+attack animation, the Bonfire aura - so the hit really does stop time, and
+starting it again lets it all go. It is started again whatever happens, and
+only if this stopped it. The stark frame and the jolt are CSS on the board's
+own element, so they never touch the canvas's pan or zoom.
+
+It is the one effect that is left out entirely, not softened, for
+photosensitive mode and reduced motion: a flash to black and white and a shaking
+screen are exactly what those settings ask to be spared.
 
 ## The anima flare
 

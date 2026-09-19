@@ -1228,6 +1228,12 @@ function cutInActor(payload) {
  */
 function shouldShowCutIn(payload, user = game.user) {
   if (!payload || !showingCutIn()) return false;
+  return canSeeAttacker(payload, user);
+}
+
+/** The cut-in's rule for who may see a decisive hit, whether or not it is shown. */
+function canSeeAttacker(payload, user = game.user) {
+  if (!payload) return false;
   const board = globalThis.canvas;
   if (payload.tokenId && board?.scene?.id && board.scene.id === payload.sceneId) {
     const token = board.tokens?.get?.(payload.tokenId);
@@ -1307,8 +1313,8 @@ function playCutIn(payload, { doc = globalThis.document, user = game.user } = {}
  */
 function wrapAttackSequence(RollForm, {
   emit = (message) => game.socket?.emit(CUT_IN_SOCKET, message),
-  play = playCutIn,
-  show = shouldShowCutIn
+  play = playDecisive,
+  show = shouldShowDecisive
 } = {}) {
   const prototype = RollForm?.prototype;
   const original = prototype?.attackSequence;
@@ -1340,7 +1346,7 @@ function wrapAttackSequence(RollForm, {
 }
 
 /** A cut-in sent by another client: cleaned, then shown if this client should. */
-function receiveCutIn(message, { play = playCutIn, show = shouldShowCutIn } = {}) {
+function receiveCutIn(message, { play = playDecisive, show = shouldShowDecisive } = {}) {
   if (message?.type !== CUT_IN_MESSAGE) return;
   try {
     const payload = cleanCutInPayload(message.payload);
@@ -1348,6 +1354,109 @@ function receiveCutIn(message, { play = playCutIn, show = shouldShowCutIn } = {}
   } catch (err) {
     console.warn(`${MODULE_ID} | could not play a received decisive cut-in`, err);
   }
+}
+
+/* -------------------------------------------- */
+/*  Hit-stop and screen shake                   */
+/* -------------------------------------------- */
+
+/**
+ * The impact of a decisive hit, the way fighting games sell one: the map
+ * freezes for a split second on a stark, high-contrast frame, then the whole
+ * screen jolts and the cut-in slashes in over it.
+ *
+ * The freeze is real. The canvas's ticker drives everything that moves on the
+ * map - token animations, the system's attack effects, the Bonfire aura - so
+ * stopping it holds them all mid-motion, and starting it again lets them go.
+ * The stark frame and the jolt are CSS on the board's own element
+ * (styles/cut-in.css), which leaves the canvas's pan and zoom alone.
+ *
+ * It rides on the cut-in's message and follows the same rule for who sees it.
+ * Photosensitive mode and reduced motion leave it out entirely.
+ */
+/** How long the map holds still. */
+const HIT_STOP = 140;
+/** Matched by epb-shake in styles/cut-in.css. */
+const SHAKE_DURATION = 420;
+
+function showingImpact() {
+  try {
+    return !!game.settings.get(MODULE_ID, "hitImpact");
+  } catch (err) {
+    return false;
+  }
+}
+
+/** Is the impact for this client: on, and not asked to keep motion down? */
+function impactAllowed() {
+  const reducedMotion = !!globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  return showingImpact() && !photosensitive() && !reducedMotion;
+}
+
+/** Should this client show a decisive hit at all: the cut-in, the impact, or both? */
+function shouldShowDecisive(payload, user = game.user) {
+  if (!payload || !(showingCutIn() || showingImpact())) return false;
+  return canSeeAttacker(payload, user);
+}
+
+/**
+ * Freeze the map, then shake it. Resolves once the freeze lets go, when the
+ * shake begins, or at once with false if there is no board or an impact is
+ * already playing. The ticker is started again only if this stopped it, and
+ * always, even if something else goes wrong, since a map left frozen would be
+ * far worse than a missed shake.
+ */
+function hitStop({ board = globalThis.canvas, duration = HIT_STOP } = {}) {
+  const view = board?.app?.view;
+  if (!view?.dataset || view.dataset.epbImpact) return Promise.resolve(false);
+  const ticker = board.app.ticker;
+  let froze = false;
+  try {
+    view.dataset.epbImpact = "stop";
+    if (ticker?.started && typeof ticker.stop === "function") {
+      ticker.stop();
+      froze = true;
+    }
+  } catch (err) {
+    console.warn(`${MODULE_ID} | could not freeze the map`, err);
+  }
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      try {
+        if (froze) ticker.start();
+      } catch (err) {
+        console.warn(`${MODULE_ID} | could not restart the map`, err);
+      }
+      view.dataset.epbImpact = "shake";
+      setTimeout(() => {
+        if (view.dataset.epbImpact === "shake") delete view.dataset.epbImpact;
+      }, SHAKE_DURATION);
+      resolve(true);
+    }, duration);
+  });
+}
+
+/**
+ * A decisive hit on this client: the impact first where it is allowed, then
+ * the cut-in where that is on. With no impact the cut-in plays at once.
+ */
+function playDecisive(payload, {
+  impact = impactAllowed,
+  stop = hitStop,
+  cutIn = playCutIn,
+  showCut = showingCutIn
+} = {}) {
+  if (!payload) return Promise.resolve(false);
+  const after = () => {
+    try {
+      if (showCut()) cutIn(payload);
+    } catch (err) {
+      console.warn(`${MODULE_ID} | could not play the decisive cut-in`, err);
+    }
+    return true;
+  };
+  if (!impact()) return Promise.resolve(after());
+  return Promise.resolve(stop()).then(after, after);
 }
 
 /* -------------------------------------------- */
@@ -3398,6 +3507,18 @@ Hooks.once("init", () => {
     default: true
   });
 
+  game.settings.register(MODULE_ID, "hitImpact", {
+    name: "Hit-stop and screen shake",
+    hint: "When a decisive attack lands, the map freezes for a split second on "
+      + "a stark frame, then the screen jolts as the cut-in plays. It plays for "
+      + "attackers you can see on the map. It is left out with Foundry's "
+      + "photosensitive mode or reduced motion on. Turn this off to hide it.",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
   game.settings.register(MODULE_ID, "charmCallouts", {
     name: "Show Charm callouts",
     hint: "When a character uses a Charm, in a roll or from their sheet, its "
@@ -3600,7 +3721,8 @@ export {
   CUT_IN_CHARMS, CUT_IN_FALLBACK, CUT_IN_PORTRAIT,
   isDecisiveHit, cutInColor, cutInImage, cleanCutInPayload, cutInPayload,
   shouldShowCutIn, cutInCharms, cutInMarkup, playCutIn, wrapAttackSequence,
-  receiveCutIn,
+  receiveCutIn, canSeeAttacker,
+  HIT_STOP, SHAKE_DURATION, impactAllowed, shouldShowDecisive, hitStop, playDecisive,
   FLARE_MESSAGE, FLARE_DURATION, FLARE_DURATION_GENTLE, FLARE_EMBERS,
   FLARE_EMBERS_GENTLE, FLARE_HEIGHT, FLARE_WIDTH, FLARE_ICONIC_MAX,
   animaRank, crossesIntoFlare, iconicLine, flareLevelLabel, cleanFlarePayload,

@@ -145,6 +145,21 @@ about a second and a half and never takes a click.
   it fades in and out with no flash, speed lines or slam. Each player can turn
   it off with **Show the decisive cut-in**.
 
+## Hit-stop and screen shake
+
+A decisive hit lands the way it would in a fighting game. For a split second
+the map freezes on a stark black-and-white frame — token movement, the attack's
+effects and any Bonfire aura all held mid-motion — then the screen jolts, hard
+at first and settling, as the cut-in slashes in.
+
+- The freeze is real: it stops the canvas's ticker, which drives everything
+  that moves on the map, and always starts it again.
+- It follows the cut-in's rule for who sees it, and plays even with the cut-in
+  turned off.
+- It is left out entirely with Foundry's photosensitive mode or the browser's
+  reduced-motion setting. Each player can turn it off with **Hit-stop and screen
+  shake**.
+
 ## The anima flare
 
 When a character's anima rises into **Bonfire** — or into **Iconic** — a column
