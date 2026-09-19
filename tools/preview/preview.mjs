@@ -11,7 +11,8 @@ const {
   FLARE_EMBERS, FLARE_EMBERS_GENTLE, FLARE_DURATION, FLARE_DURATION_GENTLE,
   breakTextStyle, calloutLines, calloutLayout, calloutSize, CALLOUT_DURATION, CALLOUT_STAGGER,
   ANIMA_TYPE_COLORS, ANIMA_CASTE_COLORS,
-  auraFlameLayout, drawAura, AURA_FLAMES, AURA_FLAMES_ICONIC, hitStop
+  auraFlameLayout, drawAura, AURA_FLAMES, AURA_FLAMES_ICONIC, hitStop,
+  createDefeatText, drainScreen
 } = panel;
 
 /* ----------------------------- Anima colours ----------------------------- */
@@ -295,6 +296,40 @@ auraApp.ticker.add(() => {
 // The hit-stop and shake, played on the aura's canvas as it would be on the
 // board: the flames freeze on the stark frame, then the canvas jolts.
 document.getElementById("replay-impact").addEventListener("click", () => hitStop({ board: { app: auraApp } }));
+
+/* -------------------------------- DEFEATED -------------------------------- */
+
+// The word at moments through its fall, landing, hold and sinking, at the
+// Break effect's token size; the last is photosensitive mode.
+{
+  const moments = [[0, "0 ms"], [0.06, "150 ms"], [0.14, "360 ms"], [0.5, "1300 ms"], [0.88, "2300 ms"], [0.5, "photosensitive", true]];
+  const app = new PIXI.Application({
+    width: 190 * moments.length, height: 260, backgroundColor: 0x2f332c, antialias: true
+  });
+  document.getElementById("defeat").append(app.view);
+  moments.forEach(([t, caption, gentle = false], i) => {
+    const x = 95 + i * 190;
+    const disc = new PIXI.Graphics();
+    disc.beginFill(0x5d574c).drawCircle(0, 0, radius * 0.9).endFill();
+    disc.lineStyle(3, 0xd8d2c0, 0.8).drawCircle(0, 0, radius * 0.9);
+    disc.position.set(x, 130);
+    app.stage.addChild(disc);
+    const word = createDefeatText(PIXI, radius, { gentle });
+    word.container.position.set(x, 130);
+    const holder = new PIXI.Container();
+    holder.position.set(x, 130);
+    holder.addChild(word.container);
+    app.stage.addChild(holder);
+    word.update(t);
+    const label = new PIXI.Text(caption, { fill: 0xdad6c8, fontSize: 13, fontFamily: "Signika" });
+    label.anchor.set(0.5, 0);
+    label.position.set(x, 225);
+    app.stage.addChild(label);
+  });
+}
+
+// The drain and vignette, played on the aura's canvas as they would be on the board.
+document.getElementById("replay-defeat").addEventListener("click", () => drainScreen({ board: { app: auraApp } }));
 
 // An invented character and iconic anima, nothing from the books.
 const riser = {

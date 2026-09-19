@@ -69,3 +69,8 @@ test("hit-stop and screen shake are each player's own choice, on unless they tur
   assert.equal(byKey.hitImpact.scope, "client");
   assert.equal(byKey.hitImpact.default, true);
 });
+
+test("the DEFEATED finisher is each player's own choice, on unless they turn it off", () => {
+  assert.equal(byKey.defeatedFinisher.scope, "client");
+  assert.equal(byKey.defeatedFinisher.default, true);
+});

@@ -1,0 +1,37 @@
+/* The DEFEATED finisher's drain: the board goes grey and dim, and a vignette
+   closes in round the screen's edges, then both lift. Neither is set in
+   photosensitive mode or with reduced motion; the script leaves them out. */
+[data-epb-defeat="true"] {
+  animation: epb-defeat-drain 2600ms ease-in-out both;
+}
+
+@keyframes epb-defeat-drain {
+  0%   { filter: none; }
+  14%  { filter: grayscale(1) brightness(0.72) contrast(1.15); }
+  72%  { filter: grayscale(1) brightness(0.72) contrast(1.15); }
+  100% { filter: none; }
+}
+
+.epb-defeat-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 42%, rgb(0 0 0 / 0.78) 100%);
+  animation: epb-defeat-vignette 2600ms ease-in-out both;
+}
+
+@keyframes epb-defeat-vignette {
+  0%   { opacity: 0; }
+  18%  { opacity: 1; }
+  72%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-epb-defeat="true"],
+  .epb-defeat-vignette {
+    animation: none;
+    display: none;
+  }
+}

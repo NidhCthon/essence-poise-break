@@ -72,7 +72,7 @@ including "-(Break)" as Break ends, is left exactly as Foundry draws it.
 
 ## Motion
 
-There are six moments, and one thing that stays moving:
+There are seven moments, and one thing that stays moving:
 
 - **The panel's crack.** Only the render that first finds a target in Break
   marks it (`data-just-broke`), so the shards crack once, not on every refresh.
@@ -83,6 +83,8 @@ There are six moments, and one thing that stays moving:
   half a second of jolting, as a decisive hit lands. See below.
 - **The decisive cut-in.** About a second and a half, across the whole screen.
   See below.
+- **The DEFEATED finisher.** Two and a half seconds, at the token and across
+  the screen. See below.
 - **The anima flare.** A little over two seconds, at the token, with a caption
   and an edge glow on screen. See below.
 - **Charm callouts.** About a second and a half per name, at the token. See
@@ -142,6 +144,32 @@ own element, so they never touch the canvas's pan or zoom.
 It is the one effect that is left out entirely, not softened, for
 photosensitive mode and reduced motion: a flash to black and white and a shaking
 screen are exactly what those settings ask to be spared.
+
+## The DEFEATED finisher
+
+BREAK is a turn in the fight; being taken out is the end of it, and it should
+feel heavier. So the word is the same carved lettering, but it does the
+opposite things: it falls from well over twice its size, gathering speed,
+rather than slamming and shuddering; it cools to ash rather than burning red;
+it spreads a little as it holds; and it sinks as it fades, where BREAK rises.
+It is whole - nothing about it cracks.
+
+Around it the world slows and goes grey. The slow motion is real, by the same
+reasoning as the hit-stop's freeze: every canvas animation measures time by the
+canvas ticker's speed, so setting it to 0.3 slows everything moving on the map
+at once. The word runs on its own clock, so it lands at full weight in a slowed
+world. The ticker is only slowed from normal speed, and only put back if nothing
+else has changed it since. The grey is a filter on the board's element, as the
+hit-stop's stark frame is, with a vignette closing in round the screen's edges.
+
+The system has no rule that marks a character out, so the finisher follows the
+table: the Incapacitated status, Foundry's defeated status, or the combat
+tracker's defeated toggle. The tracker's toggle tries to add a defeated status
+this system does not define, so a table that clicks it and then adds the skull
+has marked the token twice; each token plays it once in eight seconds.
+
+Photosensitive mode and reduced motion keep the word, fading in where it rests,
+and nothing else.
 
 ## The anima flare
 

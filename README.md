@@ -160,6 +160,23 @@ at first and settling, as the cut-in slashes in.
   reduced-motion setting. Each player can turn it off with **Hit-stop and screen
   shake**.
 
+## The DEFEATED finisher
+
+When a character is taken out, the world slows and drains of colour, the
+screen's edges darken, and DEFEATED falls onto their token in the BREAK text's
+carved lettering. It lands hard, cools to ash, holds, then sinks and fades.
+
+- The system never marks anyone out by itself, so it plays when the table does:
+  the **Incapacitated** status (the skull on the token HUD), Foundry's own
+  defeated status if something supplies it, or the **defeated** toggle in the
+  combat tracker. Doing two of those at once plays it once.
+- The slow motion is real: token movement and effects on the map run at a
+  third of their speed for over a second. The word keeps its own time.
+- Each player sees it only for a token they can see.
+- With Foundry's photosensitive mode or reduced motion, the word only fades in
+  and out, with no slowing, draining or darkening. Each player can turn it off
+  with **Show the DEFEATED finisher**.
+
 ## The anima flare
 
 When a character's anima rises into **Bonfire** — or into **Iconic** — a column
