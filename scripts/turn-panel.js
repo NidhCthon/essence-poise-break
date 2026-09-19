@@ -1987,6 +1987,125 @@ function playSplash({ doc = globalThis.document } = {}) {
 }
 
 /* -------------------------------------------- */
+/*  The VICTORY / DEFEAT finale                 */
+/* -------------------------------------------- */
+
+/**
+ * The finale: as the Storyteller ends a combat, VICTORY crosses every screen
+ * if every foe in it is down, or DEFEAT if every one of the party is. A fight
+ * that ends any other way - foes fleeing, a parley, the Storyteller calling it
+ * early - ends quietly, since the module cannot tell who won it.
+ *
+ * Sides come from the tracker: a player's character, or a token set Friendly,
+ * is the party; a token set Hostile, or Secret, is a foe; Neutral is neither.
+ * Down is what the DEFEATED finisher plays on - marked defeated in the tracker,
+ * Incapacitated, or Foundry's defeated status.
+ *
+ * Ending a combat deletes it, and every client is told, with the combat still
+ * in hand, so nothing is sent.
+ */
+/** Matched by the finale's animations in styles/splash.css. */
+const FINALE_DURATION = 2800;
+
+function showingFinale() {
+  try {
+    return !!game.settings.get(MODULE_ID, "finaleSplash");
+  } catch (err) {
+    return false;
+  }
+}
+
+/** Is this combatant out of the fight? */
+function combatantDown(combatant) {
+  if (!combatant) return false;
+  if (combatant.isDefeated || combatant.defeated) return true;
+  const statuses = combatant.actor?.statuses;
+  return !!statuses?.has && defeatStatuses().some((id) => statuses.has(id));
+}
+
+/** "party", "foes", or null for a combatant on neither side. */
+function combatantSide(combatant) {
+  if (combatant?.actor?.hasPlayerOwner) return "party";
+  const disposition = combatant?.token?.disposition;
+  const kinds = globalThis.CONST?.TOKEN_DISPOSITIONS ?? {};
+  if (disposition === (kinds.FRIENDLY ?? 1)) return "party";
+  if (disposition === (kinds.HOSTILE ?? -1) || disposition === (kinds.SECRET ?? -2)) return "foes";
+  return null;
+}
+
+function combatantsOf(combat) {
+  const combatants = combat?.combatants;
+  if (!combatants) return [];
+  return Array.isArray(combatants) ? combatants : Array.from(combatants.contents ?? combatants);
+}
+
+/**
+ * How a fight ended: "victory", "defeat", or null when it was not decided. A
+ * combat that never began has no outcome, and neither does a side with nobody
+ * on it. If both sides fell, the party's fall is the one that counts.
+ */
+function fightOutcome(combat) {
+  if (!combat || !(Number(combat.round) >= 1)) return null;
+  const combatants = combatantsOf(combat);
+  const party = combatants.filter((c) => combatantSide(c) === "party");
+  const foes = combatants.filter((c) => combatantSide(c) === "foes");
+  if (party.length && party.every(combatantDown)) return "defeat";
+  if (foes.length && foes.every(combatantDown)) return "victory";
+  return null;
+}
+
+/** The outcome to show on this client as a combat ends, or null. */
+function endsFight(combat, { board = globalThis.canvas } = {}) {
+  if (!showingFinale()) return null;
+  const outcome = fightOutcome(combat);
+  if (!outcome) return null;
+  let sceneId = null;
+  try {
+    sceneId = combat.scene?.id ?? null;
+  } catch (err) {
+    sceneId = null;
+  }
+  if (sceneId && board?.scene?.id !== sceneId) return null;
+  return outcome;
+}
+
+/** The line under the word: how long it took, or who fell. */
+function finaleSubline(outcome, rounds) {
+  if (outcome === "defeat") return "The party has fallen";
+  const count = Math.max(1, Math.floor(Number(rounds) || 1));
+  return `In ${count} ${count === 1 ? "round" : "rounds"}`;
+}
+
+function finaleMarkup(outcome, { rounds = 1, gentle = false } = {}) {
+  const defeat = outcome === "defeat";
+  return `<div class="epb-finale" data-outcome="${defeat ? "defeat" : "victory"}"${
+    gentle ? ` data-gentle="true"` : ""} aria-hidden="true">
+    <div class="epb-finale-rays"></div>
+    <div class="epb-finale-band"></div>
+    <div class="epb-finale-word">${defeat ? "Defeat" : "Victory"}</div>
+    <div class="epb-finale-sub">${esc(finaleSubline(outcome, rounds))}</div>
+  </div>`;
+}
+
+/** Put the finale on this client's screen, replacing a splash still up, then take it down. */
+function playFinale(outcome, { rounds = 1, doc = globalThis.document } = {}) {
+  if (!outcome || !doc?.body) return null;
+  const reducedMotion = !!globalThis.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  const gentle = photosensitive() || reducedMotion;
+  splashShowing?.remove();
+  const layer = doc.createElement("div");
+  layer.className = "epb-splash-layer";
+  layer.innerHTML = finaleMarkup(outcome, { rounds, gentle });
+  doc.body.append(layer);
+  splashShowing = layer;
+  setTimeout(() => {
+    layer.remove();
+    if (splashShowing === layer) splashShowing = null;
+  }, FINALE_DURATION);
+  return layer;
+}
+
+/* -------------------------------------------- */
 /*  Anima colours                               */
 /* -------------------------------------------- */
 
@@ -4279,6 +4398,20 @@ Hooks.once("init", () => {
     default: true
   });
 
+  game.settings.register(MODULE_ID, "finaleSplash", {
+    name: "Show the VICTORY / DEFEAT finale",
+    hint: "As the Storyteller ends a combat, VICTORY crosses the screen if every "
+      + "foe in it is down, or DEFEAT if the whole party is. A fight that ends "
+      + "any other way ends quietly. Foes are tokens set Hostile or Secret; the "
+      + "party is player characters and tokens set Friendly. With Foundry's "
+      + "photosensitive mode or reduced motion on, it fades in and out instead. "
+      + "Turn this off to hide it.",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
   game.settings.register(MODULE_ID, "autoOpen", {
     name: "Open automatically on your turn",
     hint: "Opens the panel when a combat turn reaches a character you control.",
@@ -4322,6 +4455,16 @@ Hooks.once("ready", () => {
   });
 
   Hooks.on("deleteCombat", () => panel?.close());
+
+  // The VICTORY / DEFEAT finale, as a decided combat is ended.
+  Hooks.on("deleteCombat", (combat) => {
+    try {
+      const outcome = endsFight(combat);
+      if (outcome) playFinale(outcome, { rounds: combat.round });
+    } catch (err) {
+      console.warn(`${MODULE_ID} | could not play the finale`, err);
+    }
+  });
 
   // The ROUND 1, FIGHT! splash, as a combat reaches round one.
   Hooks.on("updateCombat", (combat, changed) => {
@@ -4471,6 +4614,8 @@ export {
   poiseNumberText, poiseNumberColor, poiseNumberFrame, poiseNumberTokens, playPoiseNumber,
   poiseAfterUpdate,
   SPLASH_DURATION, SPLASH_DURATION_GENTLE, splashedCombats, startsFight, splashMarkup, playSplash,
+  FINALE_DURATION, combatantDown, combatantSide, fightOutcome, endsFight, finaleSubline,
+  finaleMarkup, playFinale,
   FLARE_MESSAGE, FLARE_DURATION, FLARE_DURATION_GENTLE, FLARE_EMBERS,
   FLARE_EMBERS_GENTLE, FLARE_HEIGHT, FLARE_WIDTH, FLARE_ICONIC_MAX,
   animaRank, crossesIntoFlare, iconicLine, flareLevelLabel, cleanFlarePayload,

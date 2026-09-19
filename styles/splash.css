@@ -27,6 +27,9 @@
   inset: 0;
   container-type: size;
   display: grid;
+  /* One cell the size of the screen: the band and rays are wider than it,
+     and would otherwise widen the cell and pull everything off centre. */
+  grid-template: 100% / 100%;
   place-items: center;
   overflow: hidden;
   pointer-events: none;
@@ -176,5 +179,215 @@
     transform: translateY(8cqh);
     font-size: clamp(56px, 14cqw, 260px);
     animation: epb-splash-fade 2600ms ease-in-out both;
+  }
+}
+
+/* ------------------------------------------------------------------------
+   The finale: VICTORY or DEFEAT as a fight ends.
+
+   Built like the splash - a band across the middle, one word slammed into it
+   - but it ends a fight rather than starting one. VICTORY lands in orichalcum
+   with a flash over slowly turning rays. DEFEAT is the DEFEATED finisher's
+   colours on a dark band: it falls heavily, with no flash, and sinks as it
+   goes. Every animation runs for FINALE_DURATION (2800ms) in
+   scripts/turn-panel.js.
+   ------------------------------------------------------------------------ */
+
+.epb-finale {
+  --epb-finale-color: #E5B356;
+  --epb-finale-ink: #0B0907;
+  --epb-finale-ease: cubic-bezier(0.2, 0.9, 0.25, 1);
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  display: grid;
+  /* One cell the size of the screen: the band and rays are wider than it,
+     and would otherwise widen the cell and pull everything off centre. */
+  grid-template: 100% / 100%;
+  place-items: center;
+  overflow: hidden;
+  pointer-events: none;
+  font-family: "Modesto Condensed", "Signika", sans-serif;
+  text-transform: uppercase;
+  color: #FFE3A3;
+}
+
+.epb-finale[data-outcome="defeat"] {
+  --epb-finale-color: #EE7163;
+  color: #B9B2A5;
+}
+
+.epb-finale > * {
+  grid-area: 1 / 1;
+}
+
+/* Victory only: light turning slowly behind the band. */
+.epb-finale-rays {
+  width: 160cqmax;
+  height: 160cqmax;
+  background: repeating-conic-gradient(from 0deg,
+    color-mix(in srgb, var(--epb-finale-color) 30%, transparent) 0deg 7deg,
+    transparent 7deg 20deg);
+  -webkit-mask-image: radial-gradient(circle, #000 12%, transparent 55%);
+  mask-image: radial-gradient(circle, #000 12%, transparent 55%);
+  opacity: 0;
+  animation: epb-finale-rays 2800ms linear both;
+}
+
+.epb-finale[data-outcome="defeat"] .epb-finale-rays {
+  display: none;
+}
+
+.epb-finale-band {
+  width: 110cqw;
+  height: clamp(160px, 46cqh, 560px);
+  background:
+    linear-gradient(180deg,
+      var(--epb-finale-color) 0 0.6cqh,
+      transparent 0.6cqh calc(100% - 0.6cqh),
+      var(--epb-finale-color) calc(100% - 0.6cqh)),
+    linear-gradient(180deg,
+      rgb(11 9 7 / 0.92),
+      color-mix(in srgb, var(--epb-finale-color) 18%, rgb(11 9 7 / 0.92)) 50%,
+      rgb(11 9 7 / 0.92));
+  box-shadow: 0 0 4cqh rgb(0 0 0 / 0.6);
+  transform: skewY(-3deg) scaleY(0);
+  animation: epb-finale-band 2800ms var(--epb-finale-ease) both;
+}
+
+.epb-finale[data-outcome="defeat"] .epb-finale-band {
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--epb-finale-color) 60%, #3A3530) 0 0.4cqh,
+      transparent 0.4cqh calc(100% - 0.4cqh),
+      color-mix(in srgb, var(--epb-finale-color) 60%, #3A3530) calc(100% - 0.4cqh)),
+    rgb(8 7 6 / 0.94);
+}
+
+.epb-finale-word {
+  font-size: clamp(64px, 19cqw, 380px);
+  letter-spacing: 0.05em;
+  line-height: 0.9;
+  -webkit-text-stroke: clamp(2px, 0.35cqw, 7px) var(--epb-finale-ink);
+  text-shadow:
+    0 0 3cqw var(--epb-finale-color),
+    0 0 8cqw color-mix(in srgb, var(--epb-finale-color) 55%, transparent);
+  transform: translateY(-3cqh);
+  animation: epb-finale-victory 2800ms var(--epb-finale-ease) both;
+}
+
+.epb-finale[data-outcome="defeat"] .epb-finale-word {
+  text-shadow:
+    0 0 2cqw color-mix(in srgb, var(--epb-finale-color) 70%, transparent),
+    0 0.6cqh 0 var(--epb-finale-ink);
+  animation: epb-finale-defeat 2800ms cubic-bezier(0.55, 0, 0.9, 0.45) both;
+}
+
+.epb-finale-sub {
+  align-self: end;
+  margin-bottom: calc(50cqh - clamp(160px, 46cqh, 560px) / 2 + 3cqh);
+  font-family: "Signika", sans-serif;
+  font-weight: 600;
+  font-size: clamp(16px, 2.6cqw, 44px);
+  letter-spacing: 0.3em;
+  color: #FFFFFF;
+  text-shadow: 0 1px 2px var(--epb-finale-ink), 0 0 1cqw var(--epb-finale-ink);
+  opacity: 0;
+  animation: epb-finale-sub 2800ms ease-out both;
+}
+
+/* One flash, as VICTORY lands. */
+.epb-finale::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%,
+    #FFFFFF 0%,
+    color-mix(in srgb, var(--epb-finale-color) 55%, #FFFFFF) 24%,
+    transparent 64%);
+  opacity: 0;
+  animation: epb-finale-flash 2800ms ease-out both;
+}
+
+.epb-finale[data-outcome="defeat"]::after {
+  display: none;
+}
+
+@keyframes epb-finale-band {
+  0%   { transform: skewY(-3deg) scaleY(0); }
+  7%   { transform: skewY(-3deg) scaleY(1.06); }
+  11%  { transform: skewY(-3deg) scaleY(1); }
+  86%  { transform: skewY(-3deg) scaleY(1); opacity: 1; }
+  100% { transform: skewY(-3deg) scaleY(0); opacity: 0; }
+}
+
+@keyframes epb-finale-victory {
+  0%, 6% { transform: translateY(-3cqh) scale(3); opacity: 0; }
+  12%    { transform: translateY(-3cqh) scale(0.92); opacity: 1; }
+  15%    { transform: translateY(-3cqh) scale(1.05); }
+  18%    { transform: translateY(-3cqh) scale(1); opacity: 1; }
+  84%    { transform: translateY(-3cqh) scale(1.04); opacity: 1; }
+  100%   { transform: translateY(-3cqh) scale(1.3); opacity: 0; }
+}
+
+@keyframes epb-finale-defeat {
+  0%, 4% { transform: translateY(-3cqh) scale(1.7); opacity: 0; }
+  20%    { transform: translateY(-3cqh) scale(1); opacity: 1; }
+  78%    { transform: translateY(-2cqh) scale(1); opacity: 1; }
+  100%   { transform: translateY(4cqh) scale(1); opacity: 0; }
+}
+
+@keyframes epb-finale-sub {
+  0%, 22% { opacity: 0; transform: translateY(1.5cqh); }
+  32%     { opacity: 1; transform: translateY(0); }
+  82%     { opacity: 1; }
+  100%    { opacity: 0; }
+}
+
+@keyframes epb-finale-rays {
+  0%   { opacity: 0; transform: rotate(0deg); }
+  14%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { opacity: 0; transform: rotate(40deg); }
+}
+
+@keyframes epb-finale-flash {
+  0%, 10% { opacity: 0; }
+  13%     { opacity: 0.6; }
+  26%     { opacity: 0; }
+  100%    { opacity: 0; }
+}
+
+/* Photosensitive mode and reduced motion: no flash, rays, slam or fall. The
+   band and the words fade in where they rest, hold, and fade out. */
+.epb-finale[data-gentle="true"]::after,
+.epb-finale[data-gentle="true"] .epb-finale-rays {
+  display: none;
+}
+
+.epb-finale[data-gentle="true"] .epb-finale-band {
+  transform: skewY(-3deg);
+  animation: epb-splash-fade 2800ms ease-in-out both;
+}
+
+.epb-finale[data-gentle="true"] .epb-finale-word,
+.epb-finale[data-gentle="true"] .epb-finale-sub {
+  animation: epb-splash-fade 2800ms ease-in-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .epb-finale::after,
+  .epb-finale .epb-finale-rays {
+    display: none;
+  }
+
+  .epb-finale .epb-finale-band {
+    transform: skewY(-3deg);
+    animation: epb-splash-fade 2800ms ease-in-out both;
+  }
+
+  .epb-finale .epb-finale-word,
+  .epb-finale .epb-finale-sub {
+    animation: epb-splash-fade 2800ms ease-in-out both;
   }
 }

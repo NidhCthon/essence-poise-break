@@ -139,6 +139,22 @@ a half seconds and never takes a click.
   fade in and out, with no slide, slam or flash. Each player can turn it off
   with **Show the ROUND 1, FIGHT! splash**.
 
+## VICTORY / DEFEAT
+
+As the Storyteller ends a combat, the fight's result crosses everyone's screen:
+VICTORY in orichalcum over turning rays, with how many rounds it took, if every
+foe is down; DEFEAT on a dark band, falling heavily, if the whole party is.
+
+- Foes are tokens set **Hostile** or **Secret**. The party is player characters
+  and tokens set **Friendly**. **Neutral** tokens are on neither side.
+- Down means what it does for the DEFEATED finisher: marked defeated in the
+  tracker, **Incapacitated**, or Foundry's defeated status.
+- A fight that ends any other way — foes fleeing, a parley, a combat ended
+  early — ends quietly.
+- Each player sees it only if they are looking at the fight's scene. With
+  Foundry's photosensitive mode or reduced motion it fades in and out. Each
+  player can turn it off with **Show the VICTORY / DEFEAT finale**.
+
 ## The decisive cut-in
 
 When a decisive attack lands, the attacker cuts in across everyone's screen: a

@@ -72,7 +72,7 @@ including "-(Break)" as Break ends, is left exactly as Foundry draws it.
 
 ## Motion
 
-There are nine moments, and one thing that stays moving:
+There are ten moments, and one thing that stays moving:
 
 - **The panel's crack.** Only the render that first finds a target in Break
   marks it (`data-just-broke`), so the shards crack once, not on every refresh.
@@ -81,6 +81,8 @@ There are nine moments, and one thing that stays moving:
   blend from jade to red goes through a dull grey-brown halfway.
 - **ROUND 1, FIGHT!** Two and a half seconds across the screen, once per
   fight. See below.
+- **VICTORY / DEFEAT.** Under three seconds across the screen, as a decided
+  fight ends. See below.
 - **The hit-stop and shake.** A seventh of a second held still, then under
   half a second of jolting, as a decisive hit lands. See below.
 - **The decisive cut-in.** About a second and a half, across the whole screen.
@@ -148,6 +150,25 @@ one moment everyone is looking at the same thing.
 
 Starting a combat updates it, and every client gets the update, so nothing is
 sent. Each plays it if it is looking at the fight's scene.
+
+## VICTORY / DEFEAT
+
+The bookend to ROUND 1, FIGHT!: the same band across the middle, one word
+slammed into it. VICTORY is orichalcum, lands with a flash, and has light
+turning slowly behind it, with the number of rounds beneath. DEFEAT borrows the
+DEFEATED finisher's ash and a thin break-red edge on a near-black band; it falls
+heavily with no flash, and sinks as it fades.
+
+It only plays when the fight was decided. The module can tell that every foe
+is down, or every one of the party, from the tracker's sides and the statuses
+the finisher already watches. It cannot tell a rout from a parley, so a fight
+ended with both sides standing ends quietly rather than guessing. If both sides
+fell, the party's fall is the one shown.
+
+The band and the rays are both wider than the screen, so that their ends are
+never seen. In a grid they widened the one cell everything sits in and pulled
+the words about five per cent off centre - in the ROUND 1 splash too, where it
+had passed for the band's slant. The cell is now pinned to the screen's size.
 
 ## Hit-stop and screen shake
 

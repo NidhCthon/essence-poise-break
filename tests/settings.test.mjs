@@ -89,3 +89,8 @@ test("the round splash is each player's own choice, on unless they turn it off",
   assert.equal(byKey.roundSplash.scope, "client");
   assert.equal(byKey.roundSplash.default, true);
 });
+
+test("the VICTORY / DEFEAT finale is each player's own choice, on unless they turn it off", () => {
+  assert.equal(byKey.finaleSplash.scope, "client");
+  assert.equal(byKey.finaleSplash.default, true);
+});

@@ -14,7 +14,7 @@ const {
   auraFlameLayout, drawAura, AURA_FLAMES, AURA_FLAMES_ICONIC, hitStop,
   createDefeatText, drainScreen,
   poiseNumberText, poiseNumberColor, poiseNumberFrame, poiseNumberSize,
-  gambitName, gambitCalloutLine, CUT_IN_FALLBACK, splashMarkup
+  gambitName, gambitCalloutLine, CUT_IN_FALLBACK, splashMarkup, finaleMarkup
 } = panel;
 
 /* ----------------------------- Anima colours ----------------------------- */
@@ -238,6 +238,27 @@ for (const ms of [150, 450, 1250, 1900]) splashFrame(`${ms} ms`, { at: ms });
 splashFrame("photosensitive or reduced motion, 1200 ms", { at: 1200, gentle: true });
 const replaySplash = splashFrame("live");
 document.getElementById("replay-splash").addEventListener("click", replaySplash);
+
+/* ---------------------------- VICTORY / DEFEAT ---------------------------- */
+
+function finaleFrame(caption, outcome, { at = null, gentle = false } = {}) {
+  const wrap = document.createElement("div");
+  wrap.innerHTML = `<p class="preview-caption">${caption}</p><div class="preview-cutin"></div>`;
+  document.getElementById("finale").append(wrap);
+  const stageElement = wrap.querySelector(".preview-cutin");
+  stageElement.innerHTML = finaleMarkup(outcome, { rounds: 3, gentle });
+  if (at === null) return;
+  for (const animation of stageElement.getAnimations({ subtree: true })) {
+    animation.pause();
+    animation.currentTime = at;
+  }
+}
+
+finaleFrame("victory, 250 ms", "victory", { at: 250 });
+finaleFrame("victory, 1400 ms", "victory", { at: 1400 });
+finaleFrame("defeat, 300 ms", "defeat", { at: 300 });
+finaleFrame("defeat, 1400 ms", "defeat", { at: 1400 });
+finaleFrame("photosensitive or reduced motion, 1400 ms", "victory", { at: 1400, gentle: true });
 
 /* ------------------------------ Anima flare ------------------------------ */
 
