@@ -100,7 +100,7 @@ draft.*
 
 ## Requirements
 
-- Foundry VTT **v14**
+- Foundry VTT **v14** (14.365 or later)
 - Exalted Essence system **3.0.0+**
 
 ## Install
