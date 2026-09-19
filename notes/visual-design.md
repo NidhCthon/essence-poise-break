@@ -72,7 +72,7 @@ including "-(Break)" as Break ends, is left exactly as Foundry draws it.
 
 ## Motion
 
-There are five moments, and nothing else moves:
+There are five moments, and one thing that stays moving:
 
 - **The panel's crack.** Only the render that first finds a target in Break
   marks it (`data-just-broke`), so the shards crack once, not on every refresh.
@@ -85,6 +85,8 @@ There are five moments, and nothing else moves:
   and an edge glow on screen. See below.
 - **Charm callouts.** About a second and a half per name, at the token. See
   below.
+- **The Bonfire aura.** For as long as a character stays at Bonfire or Iconic.
+  See below.
 
 Foundry's photosensitive mode turns off the panel's crack and reduces the map
 effect to a slow, faint ring. The browser's reduced-motion preference turns the
@@ -149,6 +151,29 @@ preview's small frame up to a large screen.
 
 Photosensitive mode and reduced motion get a slow, faint column with no ring,
 no flicker and no glow round the edges, and a caption that only fades.
+
+## The Bonfire aura
+
+The flare is the moment anima reaches Bonfire, and then it was gone: nothing
+on the map said who was still blazing. The aura keeps it there. Tongues of
+flame in the anima colour lick up from the token's rim over a breathing halo,
+each flickering at its own pace, and they die away over most of a second when
+the anima falls.
+
+Fire rises, so each flame leans up as well as out: the tallest burn over the
+top of the token and the shortest underneath, where leaning up would send them
+back into the token. They start at the rim, so they lap over the token's edge
+at most and never cover its art. Iconic has more flames and reaches much
+higher - nearly two and a half radii against one and a half. They were first drawn at
+under a radius, which read as a crown of petals rather than fire.
+
+It is the one effect nobody sends. Every client has the actors and the level
+the system derives from them, so each works out which tokens on its own scene
+are burning, and a player who joins or reloads mid-fight sees the aura at once.
+One ticker draws them all, and stops when none is burning.
+
+It sits just under the flare and the floating text, so those play over it.
+Photosensitive mode keeps only the halo, breathing slowly, with no flames.
 
 ## Charm callouts
 

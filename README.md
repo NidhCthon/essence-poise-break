@@ -162,6 +162,21 @@ character's iconic anima from their sheet.
   column with no ring and no flash round the edges. Each player can turn it off
   with **Show the anima flare**.
 
+## The Bonfire aura
+
+The flare marks the moment; the aura keeps it showing. For as long as a
+character's anima stays at **Bonfire** or **Iconic**, tongues of flame in their
+anima colour burn round their token over a breathing halo, reaching higher at
+Iconic, and they die away when the anima falls.
+
+- The flames rise from the token's rim and lean outwards and up, so the token's
+  art stays clear. They follow the token as it moves.
+- Every client works out for itself which tokens are burning, from the actors
+  it already has, so the aura is there for anyone joining or reloading
+  mid-fight. Each player sees it only on tokens they can see.
+- With Foundry's photosensitive mode it is a slow, faint glow with no flames.
+  Each player can turn it off with **Show the Bonfire aura**.
+
 ## Charm callouts
 
 The moment a character uses a Charm, its name bursts from their token in the
@@ -181,7 +196,7 @@ together come out one after another, stacked, with any past four counted.
 
 ## Anima colours
 
-The cut-in, the anima flare and Charm callouts are drawn in the character's
+The cut-in, the anima flare, the Bonfire aura and Charm callouts are drawn in the character's
 anima colour. A colour picked on the sheet always wins. Left at the system's
 default white, the module finds one that fits the character, in this order:
 
@@ -248,6 +263,10 @@ and the actor's `spendItem`, where the sheet pays for one. Each runs first and
 unchanged; the callout follows, sent over the same socket. The roller pays
 again after a damage roll, so each roller calls a Charm out only once.
 
+The Bonfire aura sends nothing. Each client brings its auras into line with the
+actors whenever the canvas is drawn, an actor is updated, or a token is drawn
+or deleted, and one ticker on the canvas draws every aura each frame.
+
 ## Staying in step with the system
 
 `targetNumbers()` mirrors the modifiers the system's roller applies to a target
@@ -285,8 +304,8 @@ disagreed; correct `targetNumbers()`, then re-record with
 ## Previewing changes
 
 `tools/preview/` renders the panel in every state, in both the dark and light
-themes, and the Break effect, the decisive cut-in, the anima flare and Charm
-callouts frame by frame, all from the module's own code under the same stubbed
+themes, and the Break effect, the decisive cut-in, the anima flare, the Bonfire
+aura and Charm callouts frame by frame, all from the module's own code under the same stubbed
 Foundry the tests use.
 
 ```bash

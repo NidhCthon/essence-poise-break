@@ -59,3 +59,8 @@ test("Charm callouts are each player's own choice, on unless they turn them off"
   assert.equal(byKey.charmCallouts.scope, "client");
   assert.equal(byKey.charmCallouts.default, true);
 });
+
+test("the Bonfire aura is each player's own choice, on unless they turn it off", () => {
+  assert.equal(byKey.bonfireAura.scope, "client");
+  assert.equal(byKey.bonfireAura.default, true);
+});

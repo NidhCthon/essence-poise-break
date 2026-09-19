@@ -10,7 +10,8 @@ const {
   emberLayout, flareFrame, drawFlare, flareCaptionMarkup,
   FLARE_EMBERS, FLARE_EMBERS_GENTLE, FLARE_DURATION, FLARE_DURATION_GENTLE,
   breakTextStyle, calloutLines, calloutLayout, calloutSize, CALLOUT_DURATION, CALLOUT_STAGGER,
-  ANIMA_TYPE_COLORS, ANIMA_CASTE_COLORS
+  ANIMA_TYPE_COLORS, ANIMA_CASTE_COLORS,
+  auraFlameLayout, drawAura, AURA_FLAMES, AURA_FLAMES_ICONIC
 } = panel;
 
 /* ----------------------------- Anima colours ----------------------------- */
@@ -253,6 +254,43 @@ let flareStarted = performance.now();
 flareApp.ticker.add(() => liveFlare((performance.now() - flareStarted) % (FLARE_DURATION + 600)));
 document.getElementById("replay-flare").addEventListener("click", () => {
   flareStarted = performance.now();
+});
+
+/* ------------------------------ Bonfire aura ----------------------------- */
+
+// At the Break effect's token size, in three colours and both levels, burning
+// live; the last is photosensitive mode's halo.
+const auraStages = [
+  ["bonfire", 0xFF6A1A, "bonfire, solar orange"],
+  ["bonfire", 0x1FA34A, "bonfire, wood green"],
+  ["iconic", 0x3E7BFF, "iconic, blue"],
+  ["iconic", 0xFF6A1A, "photosensitive", true]
+];
+const auraApp = new PIXI.Application({
+  width: cell * auraStages.length, height: 330, backgroundColor: 0x2f332c, antialias: true
+});
+document.getElementById("aura").append(auraApp.view);
+const auraDraws = auraStages.map(([level, color, caption, gentle = false], i) => {
+  const x = cell / 2 + i * cell;
+  const disc = new PIXI.Graphics();
+  disc.beginFill(0x5d574c).drawCircle(0, 0, radius * 0.9).endFill();
+  disc.lineStyle(3, 0xd8d2c0, 0.8).drawCircle(0, 0, radius * 0.9);
+  disc.position.set(x, 200);
+  auraApp.stage.addChild(disc);
+  const light = new PIXI.Graphics();
+  light.blendMode = PIXI.BLEND_MODES.ADD;
+  light.position.set(x, 200);
+  auraApp.stage.addChild(light);
+  const label = new PIXI.Text(caption, { fill: 0xdad6c8, fontSize: 13, fontFamily: "Signika" });
+  label.anchor.set(0.5, 0);
+  label.position.set(x, 300);
+  auraApp.stage.addChild(label);
+  const layout = auraFlameLayout(level === "iconic" ? AURA_FLAMES_ICONIC : AURA_FLAMES, seedFor(`preview-aura-${i}`));
+  return (time) => drawAura(light, layout, { time, level, gentle }, radius, color);
+});
+auraApp.ticker.add(() => {
+  const time = performance.now() / 1000;
+  for (const draw of auraDraws) draw(time);
 });
 
 // An invented character and iconic anima, nothing from the books.
