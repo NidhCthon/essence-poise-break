@@ -355,6 +355,17 @@ token's copy is written through the token's own actor, which is what keeps the
 colour in that token rather than spreading it to every other token from the
 same actor.
 
+## One switch for all of it
+
+There are eleven effects, each with its own setting, so that a table can keep
+the ones it likes. That is too many to hunt through for someone on a slow
+laptop, or who wants a quiet session, so **Cinematic effects** turns every one
+off at once. It sits above them in the settings, is each player's own, and
+leaves each effect's setting as it was, so turning it back on brings back
+exactly what that player had. Every effect asks one function whether it is on
+(`effectEnabled` in `scripts/core.js`), which is what makes one switch
+possible, and a test turns the switch off and checks that nothing plays.
+
 ## Checking it
 
 `tools/preview/` renders every panel state in both themes, and the shatter frame

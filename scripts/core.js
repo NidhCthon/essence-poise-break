@@ -14,8 +14,23 @@ const VERIFIED_SYSTEM = "3.1.0";
 
 const { ApplicationV2 } = foundry.applications.api;
 
+/**
+ * Is one of the module's effects on for this player? Each effect has its own
+ * setting, and "Cinematic effects" switches them all off at once - for a slow
+ * machine, or a quiet session - without losing how each was set.
+ */
+function effectEnabled(key) {
+  try {
+    if (game.settings.get(MODULE_ID, "cinematicEffects") === false) return false;
+    return !!game.settings.get(MODULE_ID, key);
+  } catch (err) {
+    return false;
+  }
+}
+
 export {
   ApplicationV2,
+  effectEnabled,
   MODULE_ID,
   SYSTEM_ID,
   VERIFIED_SYSTEM

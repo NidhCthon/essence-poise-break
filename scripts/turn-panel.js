@@ -102,6 +102,19 @@ Hooks.once("init", () => {
     default: true
   });
 
+  game.settings.register(MODULE_ID, "cinematicEffects", {
+    name: "Cinematic effects",
+    hint: "Every effect below at once: BREAK, the cut-in, hit-stop, DEFEATED, "
+      + "Poise numbers, callouts, the anima flare and aura, and the round "
+      + "splashes. Turn this off for a quiet session or a slow machine; each "
+      + "effect keeps its own setting for when it comes back on.",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true,
+    onChange: () => syncAurasSafely()
+  });
+
   game.settings.register(MODULE_ID, "breakEffect", {
     name: "Show the Break effect",
     hint: "Shatters a token's Poise and slams the word BREAK over it the moment "

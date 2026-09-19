@@ -4,7 +4,7 @@
 
 import { CUT_IN_FALLBACK, cutInColor } from "./cut-in.js";
 import { FLARE_RANK, animaRank } from "./anima-flare.js";
-import { MODULE_ID } from "./core.js";
+import { MODULE_ID, effectEnabled } from "./core.js";
 import { animaColorFor } from "./anima-colors.js";
 import { mixColor, photosensitive, seedFor, seededRandom } from "./break-effect.js";
 
@@ -33,11 +33,7 @@ const AURA_REACH_ICONIC = 2.4;
 const AURA_FADE = 0.8;
 
 function showingAura() {
-  try {
-    return !!game.settings.get(MODULE_ID, "bonfireAura");
-  } catch (err) {
-    return false;
-  }
+  return effectEnabled("bonfireAura");
 }
 
 /** "bonfire" or "iconic" while an actor's aura burns, otherwise null. */

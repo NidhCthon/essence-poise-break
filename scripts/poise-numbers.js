@@ -3,7 +3,7 @@
  */
 
 import { BREAK_COLORS, breakTextStyle, mixColor, photosensitive } from "./break-effect.js";
-import { MODULE_ID } from "./core.js";
+import { MODULE_ID, effectEnabled } from "./core.js";
 import { visibleTokens } from "./defeated.js";
 
 /* -------------------------------------------- */
@@ -31,11 +31,7 @@ const POISE_NUMBER_SIZE_MAX = 140;
 const POISE_NUMBER_STACK = 4;
 
 function showingPoiseNumbers() {
-  try {
-    return !!game.settings.get(MODULE_ID, "poiseNumbers");
-  } catch (err) {
-    return false;
-  }
+  return effectEnabled("poiseNumbers");
 }
 
 function poiseNumberSize(radius) {

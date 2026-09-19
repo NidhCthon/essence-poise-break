@@ -2,7 +2,7 @@
  * Poise & Break - The ROUND 1, FIGHT! splash and the VICTORY / DEFEAT finale.
  */
 
-import { MODULE_ID } from "./core.js";
+import { MODULE_ID, effectEnabled } from "./core.js";
 import { defeatStatuses } from "./defeated.js";
 import { esc } from "./rules.js";
 import { photosensitive } from "./break-effect.js";
@@ -27,11 +27,7 @@ const SPLASH_DURATION = 2400;
 const SPLASH_DURATION_GENTLE = 2600;
 
 function showingSplash() {
-  try {
-    return !!game.settings.get(MODULE_ID, "roundSplash");
-  } catch (err) {
-    return false;
-  }
+  return effectEnabled("roundSplash");
 }
 
 /** The fights that have had their splash on this client. */
@@ -112,11 +108,7 @@ function playSplash({ doc = globalThis.document } = {}) {
 const FINALE_DURATION = 2800;
 
 function showingFinale() {
-  try {
-    return !!game.settings.get(MODULE_ID, "finaleSplash");
-  } catch (err) {
-    return false;
-  }
+  return effectEnabled("finaleSplash");
 }
 
 /** Is this combatant out of the fight? */

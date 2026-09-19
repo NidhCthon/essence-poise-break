@@ -5,7 +5,7 @@
 import { CRACK_LIGHT, breakTextStyle, mixColor, photosensitive } from "./break-effect.js";
 import { CUT_IN_FALLBACK, CUT_IN_SOCKET, cleanCutInPayload, cutInActor, cutInCharms, cutInColor } from "./cut-in.js";
 import { GAMBITS } from "./rules.js";
-import { MODULE_ID } from "./core.js";
+import { MODULE_ID, effectEnabled } from "./core.js";
 import { animaColorFor } from "./anima-colors.js";
 import { flareToken } from "./anima-flare.js";
 
@@ -43,11 +43,7 @@ const CALLOUT_MAX = 4;
 const CALLED_OUT = Symbol("epbCalledOut");
 
 function showingCallouts() {
-  try {
-    return !!game.settings.get(MODULE_ID, "charmCallouts");
-  } catch (err) {
-    return false;
-  }
+  return effectEnabled("charmCallouts");
 }
 
 /** The names of the Charms among some items, trimmed and each once. */
@@ -347,11 +343,7 @@ function receiveCallouts(message, { play = playCallouts, show = shouldShowCallou
 const GAMBIT_MESSAGE = "gambitCallout";
 
 function showingGambitCallouts() {
-  try {
-    return !!game.settings.get(MODULE_ID, "gambitCallouts");
-  } catch (err) {
-    return false;
-  }
+  return effectEnabled("gambitCallouts");
 }
 
 /** A gambit's name: the panel's own, the system's, or its key made readable. */

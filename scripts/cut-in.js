@@ -2,7 +2,7 @@
  * Poise & Break - The decisive cut-in, and the hit-stop and screen shake before it.
  */
 
-import { MODULE_ID } from "./core.js";
+import { MODULE_ID, effectEnabled } from "./core.js";
 import { animaColorFor } from "./anima-colors.js";
 import { esc } from "./rules.js";
 import { photosensitive } from "./break-effect.js";
@@ -35,11 +35,7 @@ const CUT_IN_FALLBACK = "#E5B356";
 const CUT_IN_PORTRAIT = "icons/svg/mystery-man.svg";
 
 function showingCutIn() {
-  try {
-    return !!game.settings.get(MODULE_ID, "decisiveCutIn");
-  } catch (err) {
-    return false;
-  }
+  return effectEnabled("decisiveCutIn");
 }
 
 function revealingStorytellerCharms() {
@@ -306,11 +302,7 @@ const HIT_STOP = 140;
 const SHAKE_DURATION = 420;
 
 function showingImpact() {
-  try {
-    return !!game.settings.get(MODULE_ID, "hitImpact");
-  } catch (err) {
-    return false;
-  }
+  return effectEnabled("hitImpact");
 }
 
 /** Is the impact for this client: on, and not asked to keep motion down? */

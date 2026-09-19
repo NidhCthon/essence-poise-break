@@ -94,3 +94,17 @@ test("the VICTORY / DEFEAT finale is each player's own choice, on unless they tu
   assert.equal(byKey.finaleSplash.scope, "client");
   assert.equal(byKey.finaleSplash.default, true);
 });
+
+test("the cinematic effects switch is each player's own, on unless they turn it off", () => {
+  assert.equal(byKey.cinematicEffects.scope, "client");
+  assert.equal(byKey.cinematicEffects.default, true);
+});
+
+test("the switch comes before the effects it governs", () => {
+  const keys = registered.map((r) => r.key);
+  const at = keys.indexOf("cinematicEffects");
+  for (const key of ["breakEffect", "decisiveCutIn", "hitImpact", "defeatedFinisher", "poiseNumbers",
+    "charmCallouts", "gambitCallouts", "animaFlare", "bonfireAura", "roundSplash", "finaleSplash"]) {
+    assert.ok(keys.indexOf(key) > at, `${key} is listed above the switch`);
+  }
+});

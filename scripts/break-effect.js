@@ -3,7 +3,7 @@
  * token Breaks.
  */
 
-import { MODULE_ID } from "./core.js";
+import { MODULE_ID, effectEnabled } from "./core.js";
 
 /* -------------------------------------------- */
 /*  Poise as shards, and the Break effect       */
@@ -61,11 +61,7 @@ function isBreakEffect(effect) {
 }
 
 function showingBreakEffect() {
-  try {
-    return !!game.settings.get(MODULE_ID, "breakEffect");
-  } catch (err) {
-    return false;
-  }
+  return effectEnabled("breakEffect");
 }
 
 /**

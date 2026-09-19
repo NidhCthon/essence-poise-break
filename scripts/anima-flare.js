@@ -3,7 +3,7 @@
  */
 
 import { CUT_IN_SOCKET, cutInColor } from "./cut-in.js";
-import { MODULE_ID } from "./core.js";
+import { MODULE_ID, effectEnabled } from "./core.js";
 import { animaColorFor } from "./anima-colors.js";
 import { esc } from "./rules.js";
 import { mixColor, photosensitive, seedFor, seededRandom } from "./break-effect.js";
@@ -43,11 +43,7 @@ const ANIMA_LEVELS = ["", "dim", "glowing", "burning", "bonfire", "iconic"];
 const FLARE_RANK = ANIMA_LEVELS.indexOf("bonfire");
 
 function showingFlare() {
-  try {
-    return !!game.settings.get(MODULE_ID, "animaFlare");
-  } catch (err) {
-    return false;
-  }
+  return effectEnabled("animaFlare");
 }
 
 /** Where an anima level sits in the system's order. Anything unknown is none. */

@@ -125,6 +125,11 @@ To open it by hand, make a macro:
 game.modules.get("essence-poise-break").api.open();
 ```
 
+**Every effect below can be switched off at once** with **Cinematic effects**,
+at the top of the effect settings - for a slow machine, or a quiet session.
+It is each player's own, it leaves the panel and its rules alone, and each
+effect keeps its own setting for when the switch goes back on.
+
 ## ROUND 1, FIGHT!
 
 As a combat starts, a fighting game's opening crosses everyone's screen: a dark

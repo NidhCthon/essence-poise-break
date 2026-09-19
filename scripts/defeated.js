@@ -2,7 +2,7 @@
  * Poise & Break - The DEFEATED finisher.
  */
 
-import { MODULE_ID } from "./core.js";
+import { MODULE_ID, effectEnabled } from "./core.js";
 import { breakTextSize, breakTextStyle, mixColor, photosensitive } from "./break-effect.js";
 
 /* -------------------------------------------- */
@@ -39,11 +39,7 @@ const DEFEAT_REPEAT = 8000;
 const DEFEAT_ASH = 0xB9B2A5;
 
 function showingFinisher() {
-  try {
-    return !!game.settings.get(MODULE_ID, "defeatedFinisher");
-  } catch (err) {
-    return false;
-  }
+  return effectEnabled("defeatedFinisher");
 }
 
 function hasStatus(effect, ids) {
