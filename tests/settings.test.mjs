@@ -79,3 +79,8 @@ test("Poise damage numbers are each player's own choice, on unless they turn the
   assert.equal(byKey.poiseNumbers.scope, "client");
   assert.equal(byKey.poiseNumbers.default, true);
 });
+
+test("gambit callouts are each player's own choice, on unless they turn them off", () => {
+  assert.equal(byKey.gambitCallouts.scope, "client");
+  assert.equal(byKey.gambitCallouts.default, true);
+});

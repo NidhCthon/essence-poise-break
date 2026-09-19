@@ -268,6 +268,22 @@ A decisive attack names its Charms at the token when the dice are rolled and
 again in the cut-in if it lands. The first is the declaration, the second the
 payoff.
 
+## Gambit callouts
+
+Gambits were the one part of a fight that played with no effect at all. A
+gambit is a technique called out as much as a Charm is, so a landed gambit
+bursts from the attacker's token in the callout's carved lettering and motion,
+in capitals with an exclamation mark - DISARM!, KNOCKBACK! - the way a move is
+shouted in the shows this borrows from.
+
+It is orichalcum rather than the character's anima colour. The panel already
+gives gambits orichalcum, and it tells a gambit from a Charm at a glance when
+both come from the same token in one exchange.
+
+A Charm of an antagonist's is kept from the players, who may not know what it
+can do. A gambit is not: everyone at the table sees the weapon fly or the
+target go down, so its name is shown to everyone.
+
 ## Anima colours
 
 The anima colour picker on the sheet defaults to white, and most sheets are

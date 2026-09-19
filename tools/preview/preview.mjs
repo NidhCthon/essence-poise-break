@@ -13,7 +13,8 @@ const {
   ANIMA_TYPE_COLORS, ANIMA_CASTE_COLORS,
   auraFlameLayout, drawAura, AURA_FLAMES, AURA_FLAMES_ICONIC, hitStop,
   createDefeatText, drainScreen,
-  poiseNumberText, poiseNumberColor, poiseNumberFrame, poiseNumberSize
+  poiseNumberText, poiseNumberColor, poiseNumberFrame, poiseNumberSize,
+  gambitName, gambitCalloutLine, CUT_IN_FALLBACK
 } = panel;
 
 /* ----------------------------- Anima colours ----------------------------- */
@@ -446,5 +447,39 @@ const liveCallout = calloutStage(calloutCell / 2 + (calloutMoments.length + 1) *
 const calloutStarted = performance.now();
 const calloutLoop = CALLOUT_DURATION + (calledOut.length - 1) * CALLOUT_STAGGER + 700;
 calloutApp.ticker.add(() => liveCallout((performance.now() - calloutStarted) % calloutLoop));
+
+
+/* ---------------------------- Gambit callouts ----------------------------- */
+
+// Landed gambits, each just after it has landed, in orichalcum as the module
+// plays them rather than in an anima colour.
+{
+  const gambits = ["disarm", "knockback", "reveal_weakness", "grapple"];
+  const app = new PIXI.Application({
+    width: calloutCell * gambits.length, height: 260, backgroundColor: 0x2f332c, antialias: true
+  });
+  document.getElementById("gambit-callouts").append(app.view);
+  const size = calloutSize(radius);
+  gambits.forEach((key, i) => {
+    const x = calloutCell / 2 + i * calloutCell;
+    const disc = new PIXI.Graphics();
+    disc.beginFill(0x5d574c).drawCircle(0, 0, radius * 0.9).endFill();
+    disc.lineStyle(3, 0xd8d2c0, 0.8).drawCircle(0, 0, radius * 0.9);
+    disc.position.set(x, 200);
+    app.stage.addChild(disc);
+    const text = new PIXI.Text(gambitCalloutLine(gambitName(key)), breakTextStyle(PIXI, size));
+    text.anchor.set(0.5, 1);
+    const [frame] = calloutLayout(700, 1, { radius, size, hue: parseInt(CUT_IN_FALLBACK.slice(1), 16) });
+    text.alpha = frame.alpha;
+    text.scale.set(frame.scale);
+    text.tint = frame.tint;
+    text.position.set(x + frame.x, 200 + frame.y);
+    app.stage.addChild(text);
+    const label = new PIXI.Text(`${gambitName(key)}, 700 ms`, { fill: 0xdad6c8, fontSize: 13, fontFamily: "Signika" });
+    label.anchor.set(0.5, 0);
+    label.position.set(x, 236);
+    app.stage.addChild(label);
+  });
+}
 
 window.previewReady = true;

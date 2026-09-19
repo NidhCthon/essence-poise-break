@@ -243,6 +243,20 @@ together come out one after another, stacked, with any past four counted.
 - With Foundry's photosensitive mode the names fade in and out with no burst.
   Each player can turn them off with **Show Charm callouts**.
 
+## Gambit callouts
+
+When a gambit lands, its name bursts from the attacker's token the way a
+Charm's does — DISARM!, KNOCKBACK!, REVEAL WEAKNESS! — in orichalcum, the colour
+the panel gives gambits, rather than the character's anima colour.
+
+- It plays only when the gambit lands: the roller resolves a gambit only then,
+  and that step is what it follows. A missed gambit calls nothing out.
+- An antagonist's gambits are named for everyone, unlike its Charms, since the
+  whole table sees a gambit happen.
+- Each player sees it only for a token they can see. With Foundry's
+  photosensitive mode the name fades in and out. Each player can turn them off
+  with **Show gambit callouts**.
+
 ## Anima colours
 
 The cut-in, the anima flare, the Bonfire aura and Charm callouts are drawn in the character's
@@ -305,6 +319,9 @@ its thresholds. The client that makes a change to an actor notes the level in
 recalculated it; if it rose into Bonfire or Iconic, that client plays the flare
 and sends it over the same socket. The `preUpdateActor` watcher never returns a
 value, because Foundry cancels an update when one of those returns `false`.
+
+Gambit callouts wrap the roller's `_resolveGambit`, which it calls only when
+a gambit lands, in the same way, and read the gambit from `this.object.gambit`.
 
 Charm callouts wrap two more of the system's steps, in the same way: the
 roller's `_updateRollerResources`, where it pays for the Charms added to a roll,

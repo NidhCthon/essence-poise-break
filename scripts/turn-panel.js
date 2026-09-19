@@ -3260,6 +3260,125 @@ function receiveCallouts(message, { play = playCallouts, show = shouldShowCallou
 }
 
 /* -------------------------------------------- */
+/*  Gambit callouts                             */
+/* -------------------------------------------- */
+
+/**
+ * Gambit callouts: when a gambit lands, its name bursts from the attacker's
+ * token the way a Charm's does - "DISARM!", "KNOCKBACK!" - in orichalcum, the
+ * colour this module gives gambits, rather than the character's anima.
+ *
+ * The roller resolves a gambit in _resolveGambit(), which it calls only when
+ * the gambit lands against a target, so that step is wrapped: it runs first
+ * and unchanged, then the rolling client plays the callout and sends it to
+ * everyone else. A gambit is something the whole table sees happen, so unlike a
+ * Charm's, an antagonist's is named for everyone.
+ */
+const GAMBIT_MESSAGE = "gambitCallout";
+
+function showingGambitCallouts() {
+  try {
+    return !!game.settings.get(MODULE_ID, "gambitCallouts");
+  } catch (err) {
+    return false;
+  }
+}
+
+/** A gambit's name: the panel's own, the system's, or its key made readable. */
+function gambitName(key) {
+  if (typeof key !== "string" || !key.trim() || key === "none") return "";
+  const row = GAMBITS.find((gambit) => gambit.key === key);
+  if (row) return row.name;
+  const label = CONFIG.EXALTEDESSENCE?.gambits?.[key];
+  let localized = "";
+  try {
+    localized = label ? game.i18n?.localize?.(label) ?? "" : "";
+  } catch (err) {
+    localized = "";
+  }
+  if (localized && localized !== label) return localized;
+  return key.trim().replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** The line as called out. */
+function gambitCalloutLine(name) {
+  return `${String(name ?? "").toUpperCase()}!`;
+}
+
+/** The callout for a roller whose gambit has just landed, or null. */
+function gambitCallout(form) {
+  const actor = form?.actor;
+  const name = gambitName(form?.object?.gambit);
+  if (!actor || !name) return null;
+  let token = null;
+  try {
+    token = typeof form._getActorToken === "function" ? form._getActorToken() : null;
+  } catch (err) {
+    token = null;
+  }
+  return calloutPayload(actor, token, [name]);
+}
+
+/** Only for a token this client can see, on the scene it is viewing. */
+function shouldShowGambitCallout(payload) {
+  if (!payload || !showingGambitCallouts()) return false;
+  const token = flareToken(payload);
+  return !!token && !!token.isVisible && !token.destroyed;
+}
+
+/** The callout on this client, over the attacker's token. */
+function playGambitCallout(payload) {
+  const token = flareToken(payload);
+  const name = payload?.charms?.[0];
+  if (!token || !name) return null;
+  return playCalloutsOnToken(token, [gambitCalloutLine(name)], CUT_IN_FALLBACK);
+}
+
+/** Wrap the roller's resolving of a gambit. Its own step runs first, and its result is returned. */
+function wrapResolveGambit(RollForm, {
+  emit = emitOnSocket, play = playGambitCallout, show = shouldShowGambitCallout
+} = {}) {
+  const prototype = RollForm?.prototype;
+  const original = prototype?._resolveGambit;
+  if (typeof original !== "function" || original.epbGambitCallout) return false;
+  const wrapped = function (...args) {
+    const result = original.apply(this, args);
+    let payload = null;
+    try {
+      payload = gambitCallout(this);
+    } catch (err) {
+      console.warn(`${MODULE_ID} | could not read the roll for a gambit callout`, err);
+    }
+    if (!payload) return result;
+    try {
+      emit({ type: GAMBIT_MESSAGE, payload });
+    } catch (err) {
+      console.warn(`${MODULE_ID} | could not send a gambit callout`, err);
+    }
+    try {
+      if (show(payload)) play(payload);
+    } catch (err) {
+      console.warn(`${MODULE_ID} | could not play a gambit callout`, err);
+    }
+    return result;
+  };
+  wrapped.epbGambitCallout = true;
+  prototype._resolveGambit = wrapped;
+  return true;
+}
+
+/** A gambit callout sent by another client: cleaned, then shown if this client should. */
+function receiveGambitCallout(message, { play = playGambitCallout, show = shouldShowGambitCallout } = {}) {
+  if (message?.type !== GAMBIT_MESSAGE) return;
+  try {
+    const payload = cleanCutInPayload(message.payload);
+    if (payload?.charms?.length && show(payload)) play(payload);
+  } catch (err) {
+    console.warn(`${MODULE_ID} | could not play a received gambit callout`, err);
+  }
+}
+
+/* -------------------------------------------- */
 /*  The panel                                   */
 /* -------------------------------------------- */
 
@@ -4001,6 +4120,19 @@ Hooks.once("init", () => {
     default: true
   });
 
+  game.settings.register(MODULE_ID, "gambitCallouts", {
+    name: "Show gambit callouts",
+    hint: "When a gambit lands, its name bursts from the attacker's token in "
+      + "orichalcum - DISARM!, KNOCKBACK! It plays for tokens you can see, and "
+      + "names an antagonist's gambits too, since everyone sees them happen. "
+      + "With Foundry's photosensitive mode on, the name fades in and out "
+      + "instead. Turn this off to hide them.",
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
   game.settings.register(MODULE_ID, "revealStorytellerCharms", {
     name: "Name the Storyteller's Charms",
     hint: "An antagonist's decisive cut-in and Charm callouts keep the names of "
@@ -4139,12 +4271,16 @@ Hooks.once("ready", () => {
     receiveCutIn(message);
     receiveAnimaFlare(message);
     receiveCallouts(message);
+    receiveGambitCallout(message);
   });
 
   // Charm callouts: the roller paying for a roll's Charms, and the actor
   // spending one from the sheet.
   wrapRollerResources(game.exaltedessence?.RollForm);
   wrapSpendItem(CONFIG.Actor?.documentClass);
+
+  // Gambit callouts: the roller resolving a gambit that has landed.
+  wrapResolveGambit(game.exaltedessence?.RollForm);
 
   // The anima flare. The client changing an actor notes its anima level first
   // and compares once the system has worked out the new one. preUpdateActor is
@@ -4249,5 +4385,7 @@ export {
   calloutNames, calloutPayload, rollerCallout, sheetCallout, shouldShowCallouts,
   wrapRollerResources, wrapSpendItem, calloutFrame, calloutLines, calloutSize,
   calloutLayout, playCalloutsOnToken, playCallouts, receiveCallouts,
+  GAMBIT_MESSAGE, gambitName, gambitCalloutLine, gambitCallout, shouldShowGambitCallout,
+  playGambitCallout, wrapResolveGambit, receiveGambitCallout,
   TurnPanel
 };

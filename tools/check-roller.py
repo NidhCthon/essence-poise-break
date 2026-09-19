@@ -20,6 +20,8 @@ say what a roll needs before the roller runs:
 * Charm callouts wrap the roller's `_updateRollerResources()`, where it pays
   for a roll's Charms, and the actor's `spendItem()`, where the sheet pays for
   one - telling a use from switching off by `item.system.active`.
+* Gambit callouts wrap the roller's `_resolveGambit()`, which it calls only
+  when a gambit lands, and read the gambit from `this.object.gambit`.
 
 That duplication is deliberate, but it means the module can fall out of step
 when the system changes.
@@ -65,6 +67,14 @@ CALLOUT_ROLLER_LINES = [
 CALLOUT_ACTOR_LINES = [
     re.compile(r"^\s*spendItem\(item\)\s*\{\s*$", re.M),
     re.compile(r"^\s*if \(item\.system\.active\) \{\s*$", re.M),
+]
+# What gambit callouts wrap: the roller resolving a gambit, the call that only
+# makes it when the gambit landed, and the switch on the gambit it read.
+GAMBIT_CALLOUT_LINES = [
+    re.compile(r"^\s*_resolveGambit\(postDefenseTotal = 0\)\s*\{\s*$", re.M),
+    re.compile(r"^.*\bthis\._resolveGambit\(postDefenseTotal\);.*$", re.M),
+    re.compile(r"^\s*if \(postDefenseTotal >= 0 && this\.object\.target\) \{\s*$", re.M),
+    re.compile(r"^\s*switch \(this\.object\.gambit\) \{\s*$", re.M),
 ]
 PANEL = Path(__file__).resolve().parent.parent / "scripts" / "turn-panel.js"
 VERIFIED = re.compile(r'const VERIFIED_SYSTEM = "([^"]+)"')
@@ -176,6 +186,14 @@ def extract(source):
         cutin.extend(found)
     blocks["cutin"] = normalise("\n".join(cutin))
 
+    gambit_callouts = []
+    for pattern in GAMBIT_CALLOUT_LINES:
+        found = pattern.findall(source)
+        if not found:
+            return None
+        gambit_callouts.extend(found)
+    blocks["gambit-callouts"] = normalise("\n".join(gambit_callouts))
+
     return blocks
 
 
@@ -257,6 +275,7 @@ def main():
             "defence": "the baseDefense branch in targetNumbers()",
             "social": "socialNumbers() and the social block",
             "gambits": "the GAMBITS table in scripts/turn-panel.js",
+            "gambit-callouts": "gambitCallout() and wrapResolveGambit()",
             "cutin": "isDecisiveHit(), cutInPayload() and wrapAttackSequence() "
                      "in scripts/turn-panel.js",
             "anima": "animaRank() and crossesIntoFlare() in scripts/turn-panel.js",
