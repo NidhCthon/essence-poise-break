@@ -12,7 +12,8 @@ const {
   breakTextStyle, calloutLines, calloutLayout, calloutSize, CALLOUT_DURATION, CALLOUT_STAGGER,
   ANIMA_TYPE_COLORS, ANIMA_CASTE_COLORS,
   auraFlameLayout, drawAura, AURA_FLAMES, AURA_FLAMES_ICONIC, hitStop,
-  createDefeatText, drainScreen
+  createDefeatText, drainScreen,
+  poiseNumberText, poiseNumberColor, poiseNumberFrame, poiseNumberSize
 } = panel;
 
 /* ----------------------------- Anima colours ----------------------------- */
@@ -296,6 +297,48 @@ auraApp.ticker.add(() => {
 // The hit-stop and shake, played on the aura's canvas as it would be on the
 // board: the flames freeze on the stark frame, then the canvas jolts.
 document.getElementById("replay-impact").addEventListener("click", () => hitStop({ board: { app: auraApp } }));
+
+/* ----------------------------- Poise numbers ----------------------------- */
+
+// A withering hit, the hit that Breaks, and Poise coming back in Break, each
+// just after it lands and part way up; drawn the way playPoiseNumber draws them.
+{
+  const cases = [
+    [{ amount: -2, broke: false }, 0.2, "withering, 280 ms"],
+    [{ amount: -2, broke: false }, 0.55, "withering, 770 ms"],
+    [{ amount: -3, broke: true }, 0.2, "the Breaking hit, 280 ms"],
+    [{ amount: 2, broke: false }, 0.2, "coming back, 280 ms"]
+  ];
+  const app = new PIXI.Application({
+    width: 220 * cases.length, height: 300, backgroundColor: 0x2f332c, antialias: true
+  });
+  document.getElementById("poise-numbers").append(app.view);
+  const size = poiseNumberSize(radius);
+  cases.forEach(([change, t, caption], i) => {
+    const cx = 110 + i * 220;
+    const cy = 190;
+    const disc = new PIXI.Graphics();
+    disc.beginFill(0x5d574c).drawCircle(0, 0, radius * 0.9).endFill();
+    disc.lineStyle(3, 0xd8d2c0, 0.8).drawCircle(0, 0, radius * 0.9);
+    disc.position.set(cx - radius * 0.5, cy);
+    app.stage.addChild(disc);
+    const holder = new PIXI.Container();
+    const number = holder.addChild(new PIXI.Text(poiseNumberText(change), breakTextStyle(PIXI, size)));
+    number.anchor.set(0.5, 1);
+    const label = holder.addChild(new PIXI.Text("POISE", breakTextStyle(PIXI, Math.round(size * 0.34))));
+    label.anchor.set(0.5, 0);
+    number.tint = label.tint = poiseNumberColor(change);
+    const frame = poiseNumberFrame(t, { broke: change.broke });
+    holder.alpha = frame.alpha;
+    holder.scale.set(frame.scale);
+    holder.position.set(cx - radius * 0.5 + radius * 0.8 + radius * 0.35 * frame.drift, cy - radius * 0.35 - radius * 0.9 * frame.rise);
+    app.stage.addChild(holder);
+    const text = new PIXI.Text(caption, { fill: 0xdad6c8, fontSize: 13, fontFamily: "Signika" });
+    text.anchor.set(0.5, 0);
+    text.position.set(cx, 265);
+    app.stage.addChild(text);
+  });
+}
 
 /* -------------------------------- DEFEATED -------------------------------- */
 

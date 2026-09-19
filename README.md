@@ -160,6 +160,23 @@ at first and settling, as the cut-in slashes in.
   reduced-motion setting. Each player can turn it off with **Hit-stop and screen
   shake**.
 
+## Poise damage numbers
+
+When a token's Poise falls, the amount pops off it in the BREAK text's
+lettering, with POISE underneath: jade while they still stand, break red and
+bigger on the hit that Breaks them. Poise coming back while in Break shows as a
+paler plus. So you can see what a withering attack did without reading the
+chat card.
+
+- It shows every change to Poise, from a roll or from the sheet, on every
+  client, with nothing sent: each client remembers the Poise of the tokens it
+  has drawn and shows the difference.
+- The number sits up and to the right of the token, so the BREAK word can land
+  in the middle at the same moment. Several close together stack.
+- Each player sees it only for a token they can see. With Foundry's
+  photosensitive mode the numbers fade in and out. Each player can turn them
+  off with **Show Poise damage numbers**.
+
 ## The DEFEATED finisher
 
 When a character is taken out, the world slows and drains of colour, the

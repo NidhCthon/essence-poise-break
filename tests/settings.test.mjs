@@ -74,3 +74,8 @@ test("the DEFEATED finisher is each player's own choice, on unless they turn it 
   assert.equal(byKey.defeatedFinisher.scope, "client");
   assert.equal(byKey.defeatedFinisher.default, true);
 });
+
+test("Poise damage numbers are each player's own choice, on unless they turn them off", () => {
+  assert.equal(byKey.poiseNumbers.scope, "client");
+  assert.equal(byKey.poiseNumbers.default, true);
+});

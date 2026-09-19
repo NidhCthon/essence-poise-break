@@ -72,7 +72,7 @@ including "-(Break)" as Break ends, is left exactly as Foundry draws it.
 
 ## Motion
 
-There are seven moments, and one thing that stays moving:
+There are eight moments, and one thing that stays moving:
 
 - **The panel's crack.** Only the render that first finds a target in Break
   marks it (`data-just-broke`), so the shards crack once, not on every refresh.
@@ -83,6 +83,8 @@ There are seven moments, and one thing that stays moving:
   half a second of jolting, as a decisive hit lands. See below.
 - **The decisive cut-in.** About a second and a half, across the whole screen.
   See below.
+- **Poise damage numbers.** About a second and a half, at the token. See
+  below.
 - **The DEFEATED finisher.** Two and a half seconds, at the token and across
   the screen. See below.
 - **The anima flare.** A little over two seconds, at the token, with a caption
@@ -144,6 +146,27 @@ own element, so they never touch the canvas's pan or zoom.
 It is the one effect that is left out entirely, not softened, for
 photosensitive mode and reduced motion: a flash to black and white and a shaking
 screen are exactly what those settings ask to be spared.
+
+## Poise damage numbers
+
+The shards in the panel show Poise to whoever has the panel open; the map
+showed nothing until the Break. So each change to Poise now pops off the token
+as a number, the way damage does in an action game, in the carved lettering
+with POISE beneath it. Its colours are the panel's: jade while standing, break
+red on the hit that Breaks, and a paler jade for Poise coming back in Break.
+
+It sits up and to the right of the token and arcs further out as it rises, so
+that on the Breaking hit the number and the BREAK word land together without
+covering each other. The Breaking number lands a quarter bigger and shudders.
+
+The first size, a little under the token's radius, was small beside BREAK in
+the preview, and the table has asked for every piece of text here to be bigger,
+so it went up by a third before it shipped: about 65 pixels on an ordinary
+token.
+
+An update reaches every client with the new value only, so each client
+remembers every token's Poise as it is drawn and compares. A token this client
+has never drawn shows nothing the first time, rather than a wrong number.
 
 ## The DEFEATED finisher
 
