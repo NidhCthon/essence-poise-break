@@ -9,7 +9,7 @@
    Sizes are container units of the splash itself, so one set of rules fills a
    screen in Foundry and a small frame in the preview. Every animation here
    runs for SPLASH_DURATION (2400ms), or SPLASH_DURATION_GENTLE (2600ms) for
-   the gentle version, in scripts/turn-panel.js. */
+   the gentle version, in scripts/splash.js. */
 
 .epb-splash-layer {
   position: fixed;
@@ -190,7 +190,7 @@
    with a flash over slowly turning rays. DEFEAT is the DEFEATED finisher's
    colours on a dark band: it falls heavily, with no flash, and sinks as it
    goes. Every animation runs for FINALE_DURATION (2800ms) in
-   scripts/turn-panel.js.
+   scripts/splash.js.
    ------------------------------------------------------------------------ */
 
 .epb-finale {

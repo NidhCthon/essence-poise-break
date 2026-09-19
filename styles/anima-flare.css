@@ -8,7 +8,7 @@
    Sizes are container units of the flare's own layer, so the same rules fill a
    screen in Foundry and a small frame in the preview. The animations run for
    FLARE_DURATION (2200ms), or FLARE_DURATION_GENTLE (3000ms), in
-   scripts/turn-panel.js. */
+   scripts/anima-flare.js. */
 
 .epb-flare-layer {
   position: fixed;

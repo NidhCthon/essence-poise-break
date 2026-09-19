@@ -9,7 +9,7 @@
    Sizes are container units of the cut-in itself, so the same rules fill a
    screen in Foundry and a small frame in the preview. Every animation here
    runs for CUT_IN_DURATION (1600ms), or CUT_IN_DURATION_GENTLE (2200ms) for
-   the gentle version, in scripts/turn-panel.js. */
+   the gentle version, in scripts/cut-in.js. */
 
 .epb-cutin-layer {
   position: fixed;

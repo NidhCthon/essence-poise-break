@@ -397,6 +397,31 @@ Fixing drift is one function. The panel's working line tells you which modifier
 disagreed; correct `targetNumbers()`, then re-record with
 `python tools/check-roller.py --update`.
 
+## Where things are
+
+`scripts/turn-panel.js` is what Foundry loads. It holds the settings and the
+hooks that connect everything to Foundry and the system, and imports the rest,
+one file for each part:
+
+| file | what it holds |
+| --- | --- |
+| `core.js` | the module's id, and the system version it was checked against |
+| `rules.js` | what is legal against a target, the roller's numbers, gambit costs |
+| `gambits.js` | gambits the system leaves unfinished, and clearing their effects |
+| `panel.js` | the turn panel |
+| `break-effect.js` | Poise shards, the shatter and the BREAK word |
+| `poise-numbers.js` | Poise damage numbers |
+| `cut-in.js` | the decisive cut-in, and the hit-stop and shake before it |
+| `defeated.js` | the DEFEATED finisher |
+| `splash.js` | ROUND 1, FIGHT! and VICTORY / DEFEAT |
+| `anima-colors.js` | matching anima colours, and the fill-in button |
+| `anima-flare.js` | the anima flare |
+| `bonfire-aura.js` | the Bonfire aura |
+| `callouts.js` | Charm and gambit callouts |
+
+Each file imports only what it uses from the others, and `turn-panel.js`
+re-exports them all for the tests.
+
 ## Previewing changes
 
 `tools/preview/` renders the panel in every state, in both the dark and light

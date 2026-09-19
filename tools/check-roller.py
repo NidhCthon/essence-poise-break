@@ -76,7 +76,7 @@ GAMBIT_CALLOUT_LINES = [
     re.compile(r"^\s*if \(postDefenseTotal >= 0 && this\.object\.target\) \{\s*$", re.M),
     re.compile(r"^\s*switch \(this\.object\.gambit\) \{\s*$", re.M),
 ]
-PANEL = Path(__file__).resolve().parent.parent / "scripts" / "turn-panel.js"
+PANEL = Path(__file__).resolve().parent.parent / "scripts" / "core.js"
 VERIFIED = re.compile(r'const VERIFIED_SYSTEM = "([^"]+)"')
 
 # Where the roller inspects the target's conditions.
@@ -201,13 +201,13 @@ def check_version():
     """A message if upstream has moved past the version the panel records."""
     match = VERIFIED.search(PANEL.read_text(encoding="utf-8"))
     if not match:
-        return "FAIL: VERIFIED_SYSTEM is missing from scripts/turn-panel.js."
+        return "FAIL: VERIFIED_SYSTEM is missing from scripts/core.js."
     upstream = json.loads(fetch(SYSTEM_JSON)).get("version")
     if upstream == match.group(1):
         return None
     return ("CHANGED: the system is at {} upstream; the panel was verified "
             "against {}.\nIf the watched blocks are unchanged, read the release "
-            "notes, then bump VERIFIED_SYSTEM in scripts/turn-panel.js."
+            "notes, then bump VERIFIED_SYSTEM in scripts/core.js."
             .format(upstream, match.group(1)))
 
 
@@ -271,16 +271,16 @@ def main():
               "with --update.")
         return 1
 
-    what = {"conditions": "targetNumbers() in scripts/turn-panel.js",
+    what = {"conditions": "targetNumbers() in scripts/rules.js",
             "defence": "the baseDefense branch in targetNumbers()",
             "social": "socialNumbers() and the social block",
-            "gambits": "the GAMBITS table in scripts/turn-panel.js",
+            "gambits": "the GAMBITS table in scripts/rules.js",
             "gambit-callouts": "gambitCallout() and wrapResolveGambit()",
             "cutin": "isDecisiveHit(), cutInPayload() and wrapAttackSequence() "
-                     "in scripts/turn-panel.js",
-            "anima": "animaRank() and crossesIntoFlare() in scripts/turn-panel.js",
+                     "in scripts/cut-in.js",
+            "anima": "animaRank() and crossesIntoFlare() in scripts/anima-flare.js",
             "callouts": "rollerCallout(), sheetCallout() and their wraps in "
-                        "scripts/turn-panel.js"}
+                        "scripts/callouts.js"}
     changed = [name for name in blocks
                if expected["blocks"].get(name, {}).get("sha256")
                != digests[name]]

@@ -1,4 +1,5 @@
-// Just enough of Foundry for scripts/turn-panel.js to load and render outside
+// Just enough of Foundry for scripts/turn-panel.js, and every module it
+// imports, to load and render outside
 // it. node --test runs each test file in its own process, so every file gets a
 // freshly imported module and a fresh copy of this state.
 //
